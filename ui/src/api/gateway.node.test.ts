@@ -438,6 +438,7 @@ describe("GatewayBrowserClient", () => {
       GATEWAY_CLIENT_CAPS.TOOL_EVENTS,
       GATEWAY_CLIENT_CAPS.INLINE_WIDGETS,
       GATEWAY_CLIENT_CAPS.UI_COMMANDS,
+      GATEWAY_CLIENT_CAPS.SYSTEM_AGENT_QR_CODE,
     ]);
     expect(connectFrame.params?.scopes).toEqual([...CONTROL_UI_OPERATOR_SCOPES]);
   });
@@ -1055,6 +1056,7 @@ describe("GatewayBrowserClient", () => {
     });
 
     await vi.waitFor(() => expect(onRecoveryScopeChange).toHaveBeenCalledOnce());
+    expect(client.authenticatedDeviceId).toBe("device-1");
     expect(client.recoveryScopeReady).toBe(true);
     expect(client.recoveryScope).toBe(
       createHash("sha256").update("test-token-placeholder").digest("hex"),

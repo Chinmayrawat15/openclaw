@@ -250,7 +250,8 @@ export function readPluginSdkSurfaceBudgets(env: NodeJS.ProcessEnv = process.env
       // +3: channel streaming config reader re-exports and session-agent scope resolver.
       // +3: session-catalog terminal-start provider request and Gateway params/result contracts.
       // +1: worker desktop endpoint contract for desktop-capable worker leases.
-      4848,
+      // +1: canonical PNG QR data URL schema for plugin-owned QR login actions.
+      4849,
       env,
     ),
     publicFunctionExports: readPluginSdkSurfaceBudgetEnv(

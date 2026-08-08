@@ -142,10 +142,10 @@ const defaultPublicDeprecatedExportsByEntrypointBudget = Object.freeze({
   "text-runtime": 192,
   "agent-runtime": 2,
   "channel-secret-runtime": 23,
-  // +3: legacy AgentHarness, AgentHarnessAttemptParams, and EmbeddedRunAttemptParams
-  // remain deprecated while external harnesses migrate to the required-capability V2 contracts.
+  // +4: legacy AgentHarness, attempt, embedded-run, and side-question contracts remain
+  // deprecated while external harnesses migrate to required-capability V2 contracts.
   "agent-harness": 2,
-  "agent-harness-runtime": 7,
+  "agent-harness-runtime": 8,
   "agent-config-primitives": 2,
   "command-auth": 78,
   discord: 47,
@@ -251,8 +251,9 @@ export function readPluginSdkSurfaceBudgets(env: NodeJS.ProcessEnv = process.env
       // +4: focused agent scope functions for doctor migration enumeration.
       // +1: shared transcript credential-safety prompt for plugin-owned agent harnesses.
       // +3: channel streaming config reader re-exports and session-agent scope resolver.
-      // +5: required-capability V2 harness contracts through the focused and runtime barrels.
-      4849,
+      // +6: required-capability V2 harness contracts through the focused and runtime barrels,
+      // including the side-question compatibility split.
+      4850,
       env,
     ),
     publicFunctionExports: readPluginSdkSurfaceBudgetEnv(
@@ -318,8 +319,8 @@ export function readPluginSdkSurfaceBudgets(env: NodeJS.ProcessEnv = process.env
       // +1: shared ingress error factory projected through channel-message.
       // +1: shared ingress retention defaults projected through channel-message.
       // +1: shipped channel setup state-migration declaration during its migration window.
-      // +5: source-compatible harness contracts retained during the V2 migration window.
-      1711,
+      // +6: source-compatible harness contracts retained during the V2 migration window.
+      1712,
       env,
     ),
     publicWildcardReexports: readPluginSdkSurfaceBudgetEnv(

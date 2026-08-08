@@ -245,7 +245,8 @@ export async function buildDynamicTools(input: DynamicToolBuildParams) {
   const sessionKeys = resolveOpenClawCodingToolsSessionKeys(params, input.sandboxSessionKey);
   const nativeExecutionPolicy = resolveCodexNativeExecutionPolicyForDynamicTools(input);
   const buildOpenClawCodingTools = () =>
-    createOpenClawCodingTools({
+    params.hostCapabilities.bindToolSurface(
+      createOpenClawCodingTools({
       agentId: input.sessionAgentId,
       ...buildEmbeddedAttemptToolRunContext(params),
       exec: {
@@ -347,8 +348,9 @@ export async function buildDynamicTools(input: DynamicToolBuildParams) {
       allocateToolOutcomeOrdinal: params.allocateToolOutcomeOrdinal,
       cronCreatorToolAllowlistRef: input.cronCreatorToolAllowlistRef,
       cronCreatorToolAllowlistCaptureRef: input.cronCreatorToolAllowlistCaptureRef,
-      cronCreatorAuthorityUnavailableReason: input.cronCreatorAuthorityUnavailableReason,
-    });
+        cronCreatorAuthorityUnavailableReason: input.cronCreatorAuthorityUnavailableReason,
+      }),
+    );
   const allTools = input.resolveCronCreatorToolAuthority
     ? runWithCronCreatorAuthorityResolver({
         runId: params.runId,

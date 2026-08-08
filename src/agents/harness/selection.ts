@@ -42,6 +42,7 @@ import { createOpenClawAgentHarness } from "./builtin-openclaw.js";
 import { selectContextEngineForTranscriptHost } from "./context-engine-logical-turn.js";
 import { drainPendingContextEngineTurnsBeforeRun } from "./context-engine-turn-attempt.js";
 import { AgentHarnessPreflightError, MissingAgentHarnessError } from "./errors.js";
+import { createAgentHarnessHostCapabilities } from "./host-capability.js";
 import {
   runAgentHarnessLifecycleAttempt,
   runAgentHarnessLifecycleFinalization,
@@ -490,19 +491,28 @@ export async function runAgentHarnessSettledTurnFinalization(
   if (internalParams.systemAgentTool && !isSystemAgentOnlyAllowlist(internalParams.toolsAllow)) {
     throw new Error('OpenClaw host authority requires toolsAllow: ["openclaw"]');
   }
-  const pluginParams = withoutInternalHarnessAuthority({
-    ...internalParams,
-    operation: "settled-tool-finalization",
-  });
-  const attemptParams =
-    harness.id === "openclaw" ? pluginParams : preparePluginHarnessParams(pluginParams);
-  return runAgentHarnessOperation(harness, params, () =>
-    runWithAgentRingZeroTools([], () =>
-      runAgentHarnessLifecycleFinalization(harness, attemptParams, () =>
-        finalizeSettledTurn({ attempt: attemptParams, settledAttempt }),
-      ),
-    ),
+  const pluginAttempt = withoutInternalHarnessAuthority(
+    {
+      ...internalParams,
+      operation: "settled-tool-finalization",
+    },
+    harness,
   );
+  const attemptParams =
+    harness.id === "openclaw"
+      ? pluginAttempt.params
+      : preparePluginHarnessParams(pluginAttempt.params);
+  try {
+    return await runAgentHarnessOperation(harness, params, () =>
+      runWithAgentRingZeroTools([], () =>
+        runAgentHarnessLifecycleFinalization(harness, attemptParams, () =>
+          finalizeSettledTurn({ attempt: attemptParams, settledAttempt }),
+        ),
+      ),
+    );
+  } finally {
+    pluginAttempt.closeHostCapabilities();
+  }
 }
 
 async function runSelectedAgentHarnessAttempt(
@@ -545,33 +555,40 @@ async function runSelectedAgentHarnessAttempt(
         ),
       ]
     : [];
-  const pluginParams = withoutInternalHarnessAuthority(internalParams);
+  const pluginAttempt = withoutInternalHarnessAuthority(internalParams, harness);
   logAgentHarnessSelection(selection, {
     provider: params.provider,
     modelId: params.modelId,
     sessionKey: params.sessionKey,
     agentId: params.agentId,
   });
-  const result = await runAgentHarnessOperation(harness, params, () =>
-    runWithAgentRingZeroTools(ringZeroTools, () => {
-      // Resolve plugin policy after entering the host scope. Ring-zero tools are
-      // trusted setup authority and must survive ordinary deny-all policy.
-      const hostOpenClawAuthority =
-        isHostScopedAgentToolActive("openclaw") &&
-        isSystemAgentOnlyAllowlist(pluginParams.toolsAllow);
-      const preparedParams =
-        harness.id === "openclaw" ? pluginParams : preparePluginHarnessParams(pluginParams);
-      const attemptParams =
-        hostOpenClawAuthority && preparedParams.pluginHarnessToolPolicyRestricted
-          ? { ...preparedParams, pluginHarnessToolPolicyRestricted: false }
-          : preparedParams;
-      assertPluginHarnessConversationToolPolicySupport(
-        harness,
-        attemptParams.pluginHarnessToolPolicyRestricted === true,
-      );
-      return runAgentHarnessLifecycleAttempt(harness, attemptParams);
-    }),
-  );
+  let result: EmbeddedRunAttemptResult;
+  try {
+    result = await runAgentHarnessOperation(harness, params, () =>
+      runWithAgentRingZeroTools(ringZeroTools, () => {
+        // Resolve plugin policy after entering the host scope. Ring-zero tools are
+        // trusted setup authority and must survive ordinary deny-all policy.
+        const hostOpenClawAuthority =
+          isHostScopedAgentToolActive("openclaw") &&
+          isSystemAgentOnlyAllowlist(pluginAttempt.params.toolsAllow);
+        const preparedParams =
+          harness.id === "openclaw"
+            ? pluginAttempt.params
+            : preparePluginHarnessParams(pluginAttempt.params);
+        const attemptParams =
+          hostOpenClawAuthority && preparedParams.pluginHarnessToolPolicyRestricted
+            ? { ...preparedParams, pluginHarnessToolPolicyRestricted: false }
+            : preparedParams;
+        assertPluginHarnessConversationToolPolicySupport(
+          harness,
+          attemptParams.pluginHarnessToolPolicyRestricted === true,
+        );
+        return runAgentHarnessLifecycleAttempt(harness, attemptParams);
+      }),
+    );
+  } finally {
+    pluginAttempt.closeHostCapabilities();
+  }
   const admission = internalParams.userTurnTranscriptRecorder?.getAdmissionReceipt();
   if (
     internalParams.onContextEngineTurnCandidate &&
@@ -668,17 +685,39 @@ function isSystemAgentOnlyAllowlist(toolsAllow: readonly string[] | undefined): 
 
 function withoutInternalHarnessAuthority(
   params: EmbeddedRunAttemptParams & { systemAgentTool?: SystemAgentToolOptions },
-): EmbeddedRunAttemptParams {
+  harness: AgentHarness,
+): {
+  params: import("./types.js").AgentHarnessAttemptParams;
+  closeHostCapabilities: () => void;
+} {
+  if (harness.id === "openclaw") {
+    return {
+      // The built-in harness is the internal owner of this authority. Only
+      // plugin handoffs receive the projected public attempt shape below.
+      params: params as import("./types.js").AgentHarnessAttemptParams,
+      closeHostCapabilities: () => {},
+    };
+  }
   const {
+    admittedRunContext: _admittedRunContext,
     contextEngineLogicalTurnLease: _contextEngineLogicalTurnLease,
     onContextEngineTurnCandidate: _onContextEngineTurnCandidate,
     systemAgentTool: _systemAgentTool,
     ...pluginParams
   } = params;
-  return pluginParams;
+  const host = createAgentHarnessHostCapabilities({
+    attempt: params,
+    pluginId: harness.pluginId ?? harness.id,
+  });
+  return {
+    params: { ...pluginParams, hostCapabilities: host.capabilities },
+    closeHostCapabilities: host.close,
+  };
 }
 
-function preparePluginHarnessParams(params: EmbeddedRunAttemptParams): EmbeddedRunAttemptParams {
+function preparePluginHarnessParams(
+  params: import("./types.js").AgentHarnessAttemptParams,
+): import("./types.js").AgentHarnessAttemptParams {
   const boundary = "plugin harness handoff";
   const resolvedApiKey = params.resolvedApiKey
     ? unwrapSecretSentinelsForProviderEgress(params.resolvedApiKey, boundary)
@@ -715,9 +754,9 @@ function assertPluginHarnessConversationToolPolicySupport(
 }
 
 function applyPluginHarnessDenyAllToolPolicy(
-  params: EmbeddedRunAttemptParams,
+  params: import("./types.js").AgentHarnessAttemptParams,
   policies: ResolvedPluginHarnessToolPolicies,
-): EmbeddedRunAttemptParams {
+): import("./types.js").AgentHarnessAttemptParams {
   if (
     isHostScopedAgentToolActive("openclaw") &&
     params.toolsAllow?.length === 1 &&

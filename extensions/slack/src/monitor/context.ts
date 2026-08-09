@@ -126,6 +126,7 @@ export type SlackMonitorContext = {
   teamId: string;
   apiAppId: string;
   installationIdentity: SlackInstallationIdentity;
+  setInstallationIdentity: (identity: SlackInstallationIdentity) => void;
 
   historyLimit: number;
   dmHistoryLimit: number;
@@ -253,6 +254,14 @@ export function createSlackMonitorContext(params: {
 }): SlackMonitorContext {
   const channelHistories = new Map<string, HistoryEntry[]>();
   const logger = getChildLogger({ module: "slack-auto-reply" });
+  const identityState = {
+    teamId: params.teamId,
+    apiAppId: params.apiAppId,
+    installationIdentity: params.installationIdentity ?? {
+      kind: "degraded" as const,
+      reason: "auth_test_failed" as const,
+    },
+  };
 
   const channelCache = new Map<string, SlackChannelCacheEntry>();
   const userCache = new Map<string, { name?: string }>();
@@ -265,8 +274,8 @@ export function createSlackMonitorContext(params: {
   let lastAssistantContextCleanupAt = Date.now();
   const agentViewState = createSlackAgentViewState({
     accountId: params.accountId,
-    teamId: params.teamId,
-    apiAppId: params.apiAppId,
+    getTeamId: () => identityState.teamId,
+    getApiAppId: () => identityState.apiAppId,
     warn: (action, error) =>
       logger.warn({ error: formatSlackError(error) }, `Slack Agent View state failed to ${action}`),
   });
@@ -663,20 +672,22 @@ export function createSlackMonitorContext(params: {
           ? raw.team.id
           : "";
 
-    if (params.apiAppId && incomingApiAppId && incomingApiAppId !== params.apiAppId) {
+    if (identityState.apiAppId && incomingApiAppId && incomingApiAppId !== identityState.apiAppId) {
       logVerbose(
-        `slack: drop event with api_app_id=${incomingApiAppId} (expected ${params.apiAppId})`,
+        `slack: drop event with api_app_id=${incomingApiAppId} (expected ${identityState.apiAppId})`,
       );
       return true;
     }
-    if (params.teamId && incomingTeamId && incomingTeamId !== params.teamId) {
-      logVerbose(`slack: drop event with team_id=${incomingTeamId} (expected ${params.teamId})`);
+    if (identityState.teamId && incomingTeamId && incomingTeamId !== identityState.teamId) {
+      logVerbose(
+        `slack: drop event with team_id=${incomingTeamId} (expected ${identityState.teamId})`,
+      );
       return true;
     }
     return false;
   };
 
-  return {
+  const ctx: SlackMonitorContext = {
     cfg: params.cfg,
     accountId: params.accountId,
     botToken: params.botToken,
@@ -686,11 +697,14 @@ export function createSlackMonitorContext(params: {
     botUserId: params.botUserId,
     botId: params.botId,
     identityHealth: params.identityHealth,
-    teamId: params.teamId,
-    apiAppId: params.apiAppId,
-    installationIdentity: params.installationIdentity ?? {
-      kind: "degraded",
-      reason: "auth_test_failed",
+    teamId: identityState.teamId,
+    apiAppId: identityState.apiAppId,
+    installationIdentity: identityState.installationIdentity,
+    setInstallationIdentity: (identity) => {
+      ctx.installationIdentity = identityState.installationIdentity = identity;
+      ctx.teamId = identityState.teamId = identity.kind === "workspace" ? identity.teamId : "";
+      ctx.apiAppId = identityState.apiAppId =
+        identity.kind === "degraded" ? "" : (identity.apiAppId ?? "");
     },
     historyLimit: params.historyLimit,
     dmHistoryLimit: Math.max(0, params.dmHistoryLimit ?? 0),
@@ -735,4 +749,5 @@ export function createSlackMonitorContext(params: {
     recordSlackManagedViewThread: agentViewState.recordManagedThread,
     isSlackManagedViewThread: agentViewState.isManagedThread,
   };
+  return ctx;
 }

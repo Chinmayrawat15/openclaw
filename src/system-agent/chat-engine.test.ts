@@ -882,6 +882,7 @@ describe("SystemAgentChatEngine", () => {
         executor: "client",
       },
     });
+    expect(prompt).not.toHaveProperty("wizardSettling");
     expect(prompt.question).toBeUndefined();
     expect(prompt.text).not.toContain("Say `cancel`");
     if (!prompt.step) {
@@ -977,6 +978,9 @@ describe("SystemAgentChatEngine", () => {
 
     const acknowledged = await engine.answerWizard({ stepId });
     expect(acknowledged.text).toContain("still finishing this link attempt");
+    expect(acknowledged).toMatchObject({ wizardSettling: true });
+    expect(acknowledged).not.toHaveProperty("wizardInputPending");
+    expect(acknowledged).not.toHaveProperty("step");
 
     const cancellation = engine.handle("cancel");
     await vi.waitFor(() => expect(cleanupStarted).toBe(true));
@@ -1020,6 +1024,9 @@ describe("SystemAgentChatEngine", () => {
 
     const retransmitted = await engine.answerWizard({ stepId });
     expect(retransmitted.text).toContain("still finishing this link attempt");
+    expect(retransmitted).toMatchObject({ wizardSettling: true });
+    expect(retransmitted).not.toHaveProperty("wizardInputPending");
+    expect(retransmitted).not.toHaveProperty("step");
 
     releaseRunner();
     await vi.waitFor(() => expect(engine.hasPendingQrCode()).toBe(false));

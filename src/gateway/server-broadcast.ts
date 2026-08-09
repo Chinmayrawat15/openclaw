@@ -27,6 +27,7 @@ import type {
 import type { SessionMessageSubscriberRegistry } from "./server-chat-state.js";
 import { MAX_BUFFERED_BYTES } from "./server-constants.js";
 import type { GatewayWsClient } from "./server/ws-types.js";
+import { sessionObserverScopeKey } from "./session-observer-scope.js";
 import { logWs, shouldLogWs, summarizeAgentEventForWsLog } from "./ws-log.js";
 
 // Pairing scope is for device-pairing handshakes only; chat transcript events
@@ -282,7 +283,9 @@ export function createGatewayBroadcaster(params: {
         requiresSessionSubscription &&
         (!sessionKeys.length ||
           !sessionKeys.some((sessionKey) =>
-            params.sessionMessageSubscribers?.get(sessionKey).has(c.connId),
+            params.sessionMessageSubscribers
+              ?.get(agentId ? sessionObserverScopeKey(sessionKey, agentId) : sessionKey)
+              .has(c.connId),
           ))
       ) {
         // Scoped clients opt out of cross-session fanout, including critical observer announces.

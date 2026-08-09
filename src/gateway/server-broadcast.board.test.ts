@@ -3,6 +3,7 @@ import { GATEWAY_CLIENT_CAPS } from "../../packages/gateway-protocol/src/client-
 import { createGatewayBroadcaster } from "./server-broadcast.js";
 import { createSessionMessageSubscriberRegistry } from "./server-chat-state.js";
 import type { GatewayWsClient } from "./server/ws-types.js";
+import { createSessionObserverAudience } from "./session-observer-audience.js";
 
 type RecordingSocket = {
   bufferedAmount: number;
@@ -130,6 +131,109 @@ describe("collaboration event scope guards", () => {
     expect(subscribed.socket.events).toEqual(["session.observer"]);
     expect(otherSession.socket.events).toEqual([]);
     expect(unsubscribed.socket.events).toEqual([]);
+  });
+
+  it("delivers selected global observer digests only to their owning agent's sockets", () => {
+    const main = makeClient("main", "operator", ["operator.read"]);
+    const work = makeClient("work", "operator", ["operator.read"]);
+    const unrelated = makeClient("unrelated", "operator", ["operator.read"]);
+    for (const entry of [main, work, unrelated]) {
+      entry.client.connect.caps = [GATEWAY_CLIENT_CAPS.SESSION_SCOPED_EVENTS];
+    }
+    const subscribers = createSessionMessageSubscriberRegistry();
+    subscribers.subscribe(main.client.connId, "agent:main:global");
+    subscribers.subscribe(work.client.connId, "agent:work:global");
+    subscribers.subscribe(unrelated.client.connId, "agent:work:other");
+    const audience = createSessionObserverAudience({
+      subscribers,
+      isVisible: () => true,
+      getDefaultAgentId: () => "main",
+    });
+    const { broadcastToConnIds } = createGatewayBroadcaster({
+      clients: new Set([main.client, work.client, unrelated.client]),
+      sessionMessageSubscribers: subscribers,
+    });
+
+    for (const agentId of ["main", "work"]) {
+      const recipients = audience.recipients("global", agentId);
+      expect(recipients).toEqual(new Set([agentId]));
+      broadcastToConnIds("session.observer", { sessionKey: "global", agentId }, recipients);
+    }
+
+    expect(main.socket.events).toEqual(["session.observer"]);
+    expect(work.socket.events).toEqual(["session.observer"]);
+    expect(unrelated.socket.events).toEqual([]);
+  });
+
+  it.each(["agent", "chat", "chat.side_result"])(
+    "keeps global %s events scoped to their owning agent",
+    (event) => {
+      const work = makeClient("work", "operator", ["operator.read"]);
+      const main = makeClient("main", "operator", ["operator.read"]);
+      const bareGlobal = makeClient("bare-global", "operator", ["operator.read"]);
+      for (const entry of [work, main, bareGlobal]) {
+        entry.client.connect.caps = [GATEWAY_CLIENT_CAPS.SESSION_SCOPED_EVENTS];
+      }
+      const subscribers = createSessionMessageSubscriberRegistry();
+      subscribers.subscribe(work.client.connId, "agent:work:global");
+      subscribers.subscribe(main.client.connId, "agent:main:global");
+      subscribers.subscribe(bareGlobal.client.connId, "global");
+      const { broadcast } = createGatewayBroadcaster({
+        clients: new Set([work.client, main.client, bareGlobal.client]),
+        sessionMessageSubscribers: subscribers,
+      });
+
+      broadcast(event, { sessionKey: "global", agentId: "work" });
+
+      expect(work.socket.events).toEqual([event]);
+      expect(main.socket.events).toEqual([]);
+      expect(bareGlobal.socket.events).toEqual([]);
+    },
+  );
+
+  it("delivers global typing indicators to ordinary subscribed Control UI connections", () => {
+    const main = makeClient("main", "operator", ["operator.read"]);
+    const work = makeClient("work", "operator", ["operator.read"]);
+    const unrelated = makeClient("unrelated", "operator", ["operator.read"]);
+    const subscribers = createSessionMessageSubscriberRegistry();
+    subscribers.subscribe(main.client.connId, "agent:main:global");
+    subscribers.subscribe(work.client.connId, "agent:work:global");
+    subscribers.subscribe(unrelated.client.connId, "agent:work:other");
+    const { broadcast } = createGatewayBroadcaster({
+      clients: new Set([main.client, work.client, unrelated.client]),
+      sessionMessageSubscribers: subscribers,
+    });
+
+    for (const agentId of ["main", "work"]) {
+      broadcast("session.typing", { sessionKey: "global", agentId, typing: true });
+    }
+
+    expect(main.socket.events).toEqual(["session.typing"]);
+    expect(work.socket.events).toEqual(["session.typing"]);
+    expect(unrelated.socket.events).toEqual([]);
+  });
+
+  it.each([
+    { sessionKey: "agent:work:global", agentId: "work" },
+    { sessionKey: "agent:work:other", agentId: "work" },
+    { sessionKey: "global", agentId: undefined },
+  ])("preserves exact subscription keys for $sessionKey", ({ sessionKey, agentId }) => {
+    const subscribed = makeClient("subscribed", "operator", ["operator.read"]);
+    const unrelated = makeClient("unrelated", "operator", ["operator.read"]);
+    subscribed.client.connect.caps = [GATEWAY_CLIENT_CAPS.SESSION_SCOPED_EVENTS];
+    unrelated.client.connect.caps = [GATEWAY_CLIENT_CAPS.SESSION_SCOPED_EVENTS];
+    const subscribers = createSessionMessageSubscriberRegistry();
+    subscribers.subscribe(subscribed.client.connId, sessionKey);
+    subscribers.subscribe(unrelated.client.connId, "agent:other:global");
+    const { broadcast } = createGatewayBroadcaster({
+      clients: new Set([subscribed.client, unrelated.client]),
+      sessionMessageSubscribers: subscribers,
+    });
+
+    broadcast("chat", { sessionKey, ...(agentId ? { agentId } : {}) });
+
+    expect(subscribed.socket.events).toEqual(["chat"]);
+    expect(unrelated.socket.events).toEqual([]);
   });
 
   it("guards suggestion and typing events and forwards payloads to visibility filtering", () => {

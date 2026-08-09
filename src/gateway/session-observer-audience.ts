@@ -3,7 +3,7 @@ import type {
   SessionEventSubscriberRegistry,
   SessionMessageSubscriberRegistry,
 } from "./server-chat-state.js";
-import { sessionObserverScopeKey } from "./session-observer-model.js";
+import { sessionObserverScopeKey } from "./session-observer-scope.js";
 
 export function createSessionObserverAudience(params: {
   subscribers: SessionMessageSubscriberRegistry;

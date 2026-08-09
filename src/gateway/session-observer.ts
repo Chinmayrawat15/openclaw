@@ -29,7 +29,6 @@ import {
   rememberSessionObserverDisabledRun,
   rememberSessionObserverDormantRun,
   rememberSessionObserverRevisionFloor,
-  sessionObserverScopeKey,
   synthesizeSessionObserverTerminalDigest,
 } from "./session-observer-model.js";
 import type {
@@ -40,6 +39,7 @@ import type {
 } from "./session-observer-model.js";
 import { createSessionObserverDigestPersister } from "./session-observer-persistence.js";
 import { createSessionObserverPreamblePublisher } from "./session-observer-preamble.js";
+import { sessionObserverScopeKey } from "./session-observer-scope.js";
 import { resolveStoredSessionKeyForAgentStore as resolveStoreKey } from "./session-store-key.js";
 
 const observerLog = createSubsystemLogger("gateway/session-observer");

@@ -9,7 +9,7 @@ import {
 import { resolveDefaultAgentId } from "../../agents/agent-scope.js";
 import { canReviewOperatorApproval } from "../operator-approval-authorization.js";
 import { APPROVALS_SCOPE } from "../operator-scopes.js";
-import { sessionObserverScopeKey } from "../session-observer-model.js";
+import { sessionObserverScopeKey } from "../session-observer-scope.js";
 import { resolveRequestedSessionAgentId as resolveRequestedGlobalAgentId } from "../session-request-agent.js";
 import { resolveSessionStoreKey } from "../session-utils.js";
 import { requireSessionKey } from "./sessions-shared.js";

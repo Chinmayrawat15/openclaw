@@ -151,20 +151,21 @@ describe("createSlackMonitorContext resolveSlackSystemEventSessionKey", () => {
     const ctx = createTestContext({
       installationIdentity: { kind: "enterprise", enterpriseId: "EGRID" },
     });
+    const eventScope = (teamId: string) => ({ teamId, client: {} }) as SlackEventScope;
 
     expect(
       ctx.resolveSlackSystemEventSessionKey({
         channelId: "CSHARED1",
         channelType: "channel",
         senderId: "UACTOR1",
-        teamId: "T111",
+        eventScope: eventScope("T111"),
       }),
     ).toBe("agent:main:slack:channel:team:t111:channel:cshared1");
     expect(
       ctx.resolveSlackSystemEventSessionKey({
         channelType: "im",
         senderId: "UACTOR1",
-        teamId: "T222",
+        eventScope: eventScope("T222"),
       }),
     ).toBe("agent:main:main:account:default:team:t222");
   });

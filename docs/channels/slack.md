@@ -72,8 +72,9 @@ The relay URL must use `wss://` unless it targets localhost. Treat the bearer to
 One Slack account can receive messages from every workspace covered by an
 Enterprise Grid org-wide installation. Choose direct Socket Mode or HTTP
 Request URLs; relay mode is not supported for enterprise accounts. Both
-least-privilege manifests below enable only the V1 `message` and `app_mention`
-event path, immediate replies, and listener-owned status reactions.
+least-privilege manifests below enable the V1 `message` and `app_mention`
+event path, immediate replies, listener-owned status reactions, and Slack
+interactivity for Block Kit actions and modal submissions.
 
 #### Socket Mode
 
@@ -109,6 +110,7 @@ event path, immediate replies, and listener-owned status reactions.
   "settings": {
     "org_deploy_enabled": true,
     "socket_mode_enabled": true,
+    "interactivity": { "is_enabled": true },
     "event_subscriptions": {
       "bot_events": [
         "app_mention",
@@ -186,6 +188,10 @@ Socket Mode connection. Replace the example URL with the Gateway's public
   },
   "settings": {
     "org_deploy_enabled": true,
+    "interactivity": {
+      "is_enabled": true,
+      "request_url": "https://gateway-host.example.com/slack/events"
+    },
     "event_subscriptions": {
       "request_url": "https://gateway-host.example.com/slack/events",
       "bot_events": [
@@ -240,14 +246,16 @@ bot-authored `message` and `app_mention` events before dispatch, regardless of
 `allowBots`, because org installs do not provide a stable workspace-qualified
 bot identity for loop prevention.
 
-Enterprise support accepts direct Socket Mode or HTTP `message` and
-`app_mention` events plus workspace-qualified outbound messages. Relay mode,
-slash commands, interactions, App Home, reaction event listeners, pins,
-Slack-native approvals, and bindings remain unavailable for an enterprise
-account. Slack action tools remain unavailable except for file uploads and
-adding or removing emoji reactions. Outbound acknowledgment, typing, and
-status reactions are supported and require `reactions:write`; inbound reaction
-notifications remain unavailable.
+Enterprise support accepts direct Socket Mode or HTTP `message`, `app_mention`,
+Block Kit action, modal, and configured shortcut payloads plus
+workspace-qualified outbound messages. Add any shortcuts to the app manifest's
+`features.shortcuts` list; OpenClaw accepts their callback IDs through the same
+interaction path. Relay mode, slash commands, App Home, reaction event
+listeners, pins, Slack-native approvals, and bindings remain unavailable for an
+enterprise account. Slack action tools remain unavailable except for file
+uploads and adding or removing emoji reactions. Outbound acknowledgment,
+typing, and status reactions are supported and require `reactions:write`;
+inbound reaction notifications remain unavailable.
 
 OpenClaw records Enterprise Grid destinations as
 `team:<team-id>:channel:<channel-id>` or `team:<team-id>:user:<user-id>`.

@@ -24,6 +24,7 @@ export function registerSlackMonitorEvents(params: {
     ctx: params.ctx,
     handleSlackMessage: params.handleSlackMessage,
   });
+  registerSlackInteractionEvents({ ctx: params.ctx, trackEvent: params.trackEvent });
   if (params.ctx.installationIdentity.kind === "enterprise") {
     return;
   }
@@ -37,6 +38,5 @@ export function registerSlackMonitorEvents(params: {
     trackEvent: params.trackEvent,
   });
   registerSlackAgentEvents({ ctx: params.ctx, trackEvent: params.trackEvent });
-  registerSlackInteractionEvents({ ctx: params.ctx, trackEvent: params.trackEvent });
   registerSlackAssistantEvents({ ctx: params.ctx, trackEvent: params.trackEvent });
 }

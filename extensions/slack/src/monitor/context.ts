@@ -201,8 +201,6 @@ export function createSlackMonitorContext(params: {
 }): SlackMonitorContext {
   const channelHistories = new Map<string, HistoryEntry[]>();
   const logger = getChildLogger({ module: "slack-auto-reply" });
-  let ctx: SlackMonitorContext;
-
   const channelCache = new Map<string, SlackChannelCacheEntry>();
   const userCache = new Map<string, { name?: string }>();
   // Rate-limit active denials while retaining periodic evidence; bound keys against config churn.
@@ -493,7 +491,7 @@ export function createSlackMonitorContext(params: {
     return false;
   };
 
-  ctx = {
+  const ctx: SlackMonitorContext = {
     cfg: params.cfg,
     accountId: params.accountId,
     botToken: params.botToken,

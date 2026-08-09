@@ -364,6 +364,7 @@ suite.define(() => {
           { width: 1440, height: 900, name: "desktop" },
         ]) {
           await page.setViewportSize(viewport);
+          await settleUi(page);
           const [continueBox, cancelBox] = await Promise.all([
             continueButton.boundingBox(),
             cancelButton.boundingBox(),

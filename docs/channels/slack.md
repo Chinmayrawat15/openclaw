@@ -74,7 +74,8 @@ Enterprise Grid org-wide installation. Choose direct Socket Mode or HTTP
 Request URLs; relay mode is not supported for enterprise accounts. Both
 least-privilege manifests below enable the V1 `message` and `app_mention`
 event path, immediate replies, listener-owned status reactions, and Slack
-interactivity for Block Kit actions and modal submissions.
+interactivity for Block Kit actions and modal submissions. They also register
+the single `/openclaw` slash command.
 
 #### Socket Mode
 
@@ -85,7 +86,14 @@ interactivity for Block Kit actions and modal submissions.
     "description": "Slack connector for OpenClaw"
   },
   "features": {
-    "bot_user": { "display_name": "OpenClaw", "always_online": true }
+    "bot_user": { "display_name": "OpenClaw", "always_online": true },
+    "slash_commands": [
+      {
+        "command": "/openclaw",
+        "description": "Send a message to OpenClaw",
+        "should_escape": false
+      }
+    ]
   },
   "oauth_config": {
     "scopes": {
@@ -94,6 +102,7 @@ interactivity for Block Kit actions and modal submissions.
         "channels:history",
         "channels:read",
         "chat:write",
+        "commands",
         "files:read",
         "files:write",
         "groups:history",
@@ -140,6 +149,7 @@ uses the org-installed bot token:
       enterpriseOrgInstall: true,
       appToken: { source: "env", provider: "default", id: "SLACK_APP_TOKEN" },
       botToken: { source: "env", provider: "default", id: "SLACK_BOT_TOKEN" },
+      slashCommand: { enabled: true, name: "openclaw" },
       dmPolicy: "open",
       allowFrom: ["*"],
       groupPolicy: "allowlist",
@@ -164,7 +174,15 @@ Socket Mode connection. Replace the example URL with the Gateway's public
     "description": "Slack connector for OpenClaw"
   },
   "features": {
-    "bot_user": { "display_name": "OpenClaw", "always_online": true }
+    "bot_user": { "display_name": "OpenClaw", "always_online": true },
+    "slash_commands": [
+      {
+        "command": "/openclaw",
+        "description": "Send a message to OpenClaw",
+        "should_escape": false,
+        "url": "https://gateway-host.example.com/slack/events"
+      }
+    ]
   },
   "oauth_config": {
     "scopes": {
@@ -173,6 +191,7 @@ Socket Mode connection. Replace the example URL with the Gateway's public
         "channels:history",
         "channels:read",
         "chat:write",
+        "commands",
         "files:read",
         "files:write",
         "groups:history",
@@ -225,6 +244,7 @@ the enterprise account with the same Request URL path:
         provider: "default",
         id: "SLACK_SIGNING_SECRET",
       },
+      slashCommand: { enabled: true, name: "openclaw" },
       webhookPath: "/slack/events",
       dmPolicy: "open",
       allowFrom: ["*"],
@@ -247,15 +267,17 @@ bot-authored `message` and `app_mention` events before dispatch, regardless of
 bot identity for loop prevention.
 
 Enterprise support accepts direct Socket Mode or HTTP `message`, `app_mention`,
-Block Kit action, modal, and configured shortcut payloads plus
+Block Kit action, modal, configured shortcut, and slash-command payloads plus
 workspace-qualified outbound messages. Add any shortcuts to the app manifest's
 `features.shortcuts` list; OpenClaw accepts their callback IDs through the same
-interaction path. Relay mode, slash commands, App Home, reaction event
-listeners, pins, Slack-native approvals, and bindings remain unavailable for an
-enterprise account. Slack action tools remain unavailable except for file
-uploads and adding or removing emoji reactions. Outbound acknowledgment,
-typing, and status reactions are supported and require `reactions:write`;
-inbound reaction notifications remain unavailable.
+interaction path. The manifest examples register the single `/openclaw`
+command; native command mode still requires the administrator-managed command
+entries described below. Relay mode, App Home, reaction event listeners, pins,
+Slack-native approvals, and bindings remain unavailable for an enterprise
+account. Slack action tools remain unavailable except for file uploads and
+adding or removing emoji reactions. Outbound acknowledgment, typing, and
+status reactions are supported and require `reactions:write`; inbound reaction
+notifications remain unavailable.
 
 OpenClaw records Enterprise Grid destinations as
 `team:<team-id>:channel:<channel-id>` or `team:<team-id>:user:<user-id>`.

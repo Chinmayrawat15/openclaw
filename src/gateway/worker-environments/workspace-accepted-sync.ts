@@ -14,7 +14,7 @@ import {
   serializeWorkerWorkspaceManifest,
   type WorkerWorkspaceManifest,
 } from "./workspace-manifest.js";
-import { changedPaths, manifestNodes } from "./workspace-reconcile.js";
+import { changedPaths, manifestNodes } from "./workspace-reconcile-plan.js";
 import {
   parseManifestRef,
   WORKER_WORKSPACE_RSYNC_DESTINATION,

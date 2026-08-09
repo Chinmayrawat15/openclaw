@@ -17,6 +17,7 @@ import {
   createAcceptedWorkspacePublisherFactory,
   recoverAcceptedWorkspacePublication,
 } from "./workspace-accepted-sync.js";
+import { MAX_WORKSPACE_MANIFEST_BYTES } from "./workspace-manifest.js";
 import { DERIVED_WORKSPACE_RSYNC_EXCLUDES } from "./workspace-path-exclusions.js";
 import {
   REMOTE_WORKSPACE_QUIESCE_JS,
@@ -70,8 +71,7 @@ const REMOTE_SETUP_TIMEOUT_MS = 20_000;
 const WORKSPACE_TIMEOUT_MS = 10 * 60_000;
 const WORKSPACE_QUIESCENCE_TIMEOUT_MS = 12 * 60_000;
 const WORKSPACE_QUIESCENCE_RENEW_INTERVAL_MS = 4 * 60_000;
-// Relative to the canonical worker $HOME owned by REMOTE_WORKSPACE_SETUP_SCRIPT;
-// rsync targets must use the returned absolute directory, never this relative path.
+// Rsync targets use the absolute worker-home path returned by setup, never this relative path.
 const REMOTE_WORKSPACE_ROOT = ".openclaw-worker/workspaces";
 const REMOTE_GIT_PACK_NAME = ".openclaw-base.pack";
 const GIT_COMMIT_PATTERN = /^[a-f0-9]{40}(?:[a-f0-9]{24})?$/u;
@@ -101,8 +101,7 @@ export function createWorkerWorkspaceActions(
     return prepared;
   };
 
-  const runTask = (argv: string[], commandOptions: CommandOptions): Promise<SpawnResult> =>
-    track(options.runner.run(argv, commandOptions));
+  const runTask = (argv: string[], opts: CommandOptions) => track(options.runner.run(argv, opts));
 
   const { runBoundedInboundRsync, runRsync } = createWorkerWorkspaceRsyncTransport({
     ownerSignal: options.ownerSignal,
@@ -302,9 +301,10 @@ export function createWorkerWorkspaceActions(
         }
 
         let transferAttempt = 0;
-        prepareGitTransferList = async () =>
-          await createGitTransferList({
+        prepareGitTransferList = () =>
+          createGitTransferList({
             gitRoot,
+            baseCommit,
             temporaryDirectory: path.join(temporaryDirectory, `transfer-${transferAttempt++}`),
             signal: options.ownerSignal,
             timeoutMs: WORKSPACE_TIMEOUT_MS,
@@ -515,7 +515,7 @@ export function createWorkerWorkspaceActions(
           "--archive",
           "--no-recursive",
           "--checksum",
-          `--max-size=${MAX_RECONCILIATION_FILE_BYTES}`,
+          `--max-size=${MAX_WORKSPACE_MANIFEST_BYTES}`,
           `--bwlimit=${INBOUND_RSYNC_BW_LIMIT_KIB}`,
           "-e",
           rsyncSsh,
@@ -525,7 +525,7 @@ export function createWorkerWorkspaceActions(
         ],
         destinationRoot: manifestRoot,
         entryLimit: 1,
-        totalByteLimit: MAX_RECONCILIATION_FILE_BYTES,
+        totalByteLimit: MAX_WORKSPACE_MANIFEST_BYTES,
       });
       if (!success(baseManifestTransfer)) {
         throw workspaceSyncError(baseManifestTransfer);
@@ -533,8 +533,7 @@ export function createWorkerWorkspaceActions(
       const baseRaw = await readTransferredManifest(baseManifestPath);
       const base = parseWorkerWorkspaceManifest(baseRaw, request.baseManifestRef);
       await fs.rm(baseManifestPath);
-      // Finish or undo any interrupted accepted-state publication before measuring
-      // the current worker tree; otherwise reconciliation would plan from a partial swap.
+      // Recover interrupted publication before measuring; a partial swap is not a planning base.
       await recoverAcceptedWorkspacePublication({
         runWorkspaceCommand,
         remoteWorkspaceDir: request.remoteWorkspaceDir,
@@ -614,7 +613,7 @@ export function createWorkerWorkspaceActions(
           "--archive",
           "--no-recursive",
           "--checksum",
-          `--max-size=${MAX_RECONCILIATION_FILE_BYTES}`,
+          `--max-size=${MAX_WORKSPACE_MANIFEST_BYTES}`,
           `--bwlimit=${INBOUND_RSYNC_BW_LIMIT_KIB}`,
           "-e",
           rsyncSsh,
@@ -624,7 +623,7 @@ export function createWorkerWorkspaceActions(
         ],
         destinationRoot: manifestRoot,
         entryLimit: 1,
-        totalByteLimit: MAX_RECONCILIATION_FILE_BYTES,
+        totalByteLimit: MAX_WORKSPACE_MANIFEST_BYTES,
       });
       if (!success(currentManifestTransfer)) {
         throw workspaceSyncError(currentManifestTransfer);
@@ -703,10 +702,9 @@ export function createWorkerWorkspaceActions(
         },
         changed: true,
         verifyStable: async () => await verifyStable(expectedRemoteRef()),
-        verifyLocalStable: async () =>
-          appliedWorkspaceResult
-            ? await appliedWorkspaceResult.verifyLocalStable()
-            : await assertWorkspaceResultStable({ root: request.localPath, base, current }),
+        verifyLocalStable: () =>
+          appliedWorkspaceResult?.verifyLocalStable() ??
+          assertWorkspaceResultStable({ root: request.localPath, base, current }),
         ...(appliedWorkspaceResult
           ? { getAppliedWorkspaceResult: () => appliedWorkspaceResult }
           : {}),

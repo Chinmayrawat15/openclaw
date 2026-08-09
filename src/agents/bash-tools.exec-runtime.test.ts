@@ -618,6 +618,81 @@ describe("exec notifyOnExit suppression", () => {
   });
 });
 
+describe("sandbox exec preparation failures", () => {
+  it.each([
+    { scenario: "rejects", errorName: "Error", message: "sandbox preparation failed" },
+    { scenario: "is aborted", errorName: "AbortError", message: "sandbox preparation aborted" },
+  ])(
+    "retires the registered session and records a terminal outcome when preparation $scenario",
+    async ({ errorName, message }) => {
+      const registry = await import("./bash-process-registry.js");
+      const sessionId = `sandbox-preparation-${errorName.toLowerCase()}`;
+      const sessionSlug = vi.spyOn(registry, "createSessionSlug").mockReturnValue(sessionId);
+      const preparation =
+        createDeferred<Awaited<ReturnType<NonNullable<BashSandboxConfig["buildExecSpec"]>>>>();
+      const finalizeExec = vi.fn<NonNullable<BashSandboxConfig["finalizeExec"]>>(async () => {});
+      const completionEvents: DiagnosticExecProcessCompletedEvent[] = [];
+      const unsubscribe = onInternalDiagnosticEvent((event) => {
+        if (
+          event.type === "exec.process.completed" &&
+          event.sessionKey === "agent:main:sandbox-preparation"
+        ) {
+          completionEvents.push(event);
+        }
+      });
+      const failure = Object.assign(new Error(message), { name: errorName });
+
+      try {
+        const pending = runExecProcess({
+          command: "sandbox-command",
+          workdir: "/tmp",
+          env: {},
+          sandbox: {
+            containerName: "sandbox",
+            workspaceDir: "/workspace",
+            containerWorkdir: "/workspace",
+            buildExecSpec: async () => await preparation.promise,
+            finalizeExec,
+          },
+          usePty: false,
+          warnings: [],
+          maxOutput: 1000,
+          pendingMaxOutput: 1000,
+          notifyOnExit: false,
+          sessionKey: "agent:main:sandbox-preparation",
+          timeoutSec: null,
+        });
+
+        expect(registry.getSession(sessionId)).toMatchObject({ exited: false });
+        preparation.reject(failure);
+        await expect(pending).rejects.toBe(failure);
+        await new Promise<void>((resolve) => {
+          setImmediate(resolve);
+        });
+
+        expect(registry.getSession(sessionId)).toBeUndefined();
+        expect(supervisorMock.spawn).not.toHaveBeenCalled();
+        // Preparation owns its partial resources; mirror backends must not sync an unstarted run.
+        expect(finalizeExec).not.toHaveBeenCalled();
+        expect(completionEvents).toEqual([
+          expect.objectContaining({
+            type: "exec.process.completed",
+            target: "sandbox",
+            mode: "child",
+            outcome: "failed",
+            failureKind: "runtime-error",
+            timedOut: false,
+            sessionKey: "agent:main:sandbox-preparation",
+          }),
+        ]);
+      } finally {
+        unsubscribe();
+        sessionSlug.mockRestore();
+      }
+    },
+  );
+});
+
 describe("sandbox exec finalization suspension", () => {
   it.each([
     {

@@ -229,7 +229,10 @@ export function createCodexSteeringQueue(params: {
 
   return {
     async queue(text: string, options?: CodexSteeringQueueOptions) {
-      const pendingUserInput = params.claimPendingUserInput();
+      // Internal completion wakes are transcript input, never answers to a
+      // user's pending secret prompt.
+      const pendingUserInput =
+        options?.isInboundUserMessage === true ? params.claimPendingUserInput() : undefined;
       if (pendingUserInput) {
         if (!options?.images?.length) {
           pendingUserInput.answer(text);

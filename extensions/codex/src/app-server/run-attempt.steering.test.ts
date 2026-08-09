@@ -512,7 +512,10 @@ describe("runCodexAppServerAttempt steering", () => {
     ]);
   });
 
-  it("routes request_user_input prompts through the active run follow-up queue", async () => {
+  it.each([
+    { name: "gateway-backed", isSecret: false },
+    { name: "secret", isSecret: true },
+  ])("routes $name user prompts without consuming internal steering", async ({ isSecret }) => {
     let notify: (notification: CodexServerNotification) => Promise<void> = async () => undefined;
     let handleRequest:
       | ((request: { id: string; method: string; params?: unknown }) => Promise<unknown>)
@@ -550,6 +553,8 @@ describe("runCodexAppServerAttempt steering", () => {
 
     const params = createSteeringParams();
     params.onBlockReply = vi.fn();
+    const onRunProgress = vi.fn();
+    params.onRunProgress = onRunProgress;
     const run = runCodexAppServerAttempt(params);
     await vi.waitFor(
       () => expect(request.mock.calls.map(([method]) => method)).toContain("turn/start"),
@@ -564,13 +569,14 @@ describe("runCodexAppServerAttempt steering", () => {
         threadId: "thread-1",
         turnId: "turn-1",
         itemId: "ask-1",
+        isBlocking: true,
         questions: [
           {
             id: "mode",
             header: "Mode",
             question: "Pick a mode",
             isOther: false,
-            isSecret: false,
+            isSecret,
             options: [
               { label: "Fast", description: "Use less reasoning" },
               { label: "Deep", description: "Use more reasoning" },
@@ -600,10 +606,19 @@ describe("runCodexAppServerAttempt steering", () => {
         item: { id: "source-message", type: "userMessage", clientId: sourceMessageId },
       },
     });
+    expect(
+      onRunProgress.mock.calls.some(
+        ([event]) =>
+          (event as { reason?: string }).reason === "request:item/tool/requestUserInput:response",
+      ),
+    ).toBe(false);
     await waitAndQueueActiveRunMessage(params.sessionId, "2", { isInboundUserMessage: true });
     await expect(response).resolves.toEqual({
       answers: { mode: { answers: ["Deep"] } },
     });
+    expect(onRunProgress).toHaveBeenCalledWith(
+      expect.objectContaining({ reason: "request:item/tool/requestUserInput:response" }),
+    );
     expect(request.mock.calls.filter(([method]) => method === "turn/steer")).toHaveLength(1);
 
     await notify({

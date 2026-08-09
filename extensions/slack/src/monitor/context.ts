@@ -126,7 +126,6 @@ export type SlackMonitorContext = {
   teamId: string;
   apiAppId: string;
   installationIdentity: SlackInstallationIdentity;
-  setInstallationIdentity: (identity: SlackInstallationIdentity) => void;
 
   historyLimit: number;
   dmHistoryLimit: number;
@@ -697,14 +696,25 @@ export function createSlackMonitorContext(params: {
     botUserId: params.botUserId,
     botId: params.botId,
     identityHealth: params.identityHealth,
-    teamId: identityState.teamId,
-    apiAppId: identityState.apiAppId,
-    installationIdentity: identityState.installationIdentity,
-    setInstallationIdentity: (identity) => {
-      ctx.installationIdentity = identityState.installationIdentity = identity;
-      ctx.teamId = identityState.teamId = identity.kind === "workspace" ? identity.teamId : "";
-      ctx.apiAppId = identityState.apiAppId =
-        identity.kind === "degraded" ? "" : (identity.apiAppId ?? "");
+    get teamId() {
+      return identityState.teamId;
+    },
+    set teamId(teamId) {
+      identityState.teamId = teamId;
+    },
+    get apiAppId() {
+      return identityState.apiAppId;
+    },
+    set apiAppId(apiAppId) {
+      identityState.apiAppId = apiAppId;
+    },
+    get installationIdentity() {
+      return identityState.installationIdentity;
+    },
+    set installationIdentity(identity) {
+      identityState.installationIdentity = identity;
+      identityState.teamId = identity.kind === "workspace" ? identity.teamId : "";
+      identityState.apiAppId = identity.kind === "degraded" ? "" : (identity.apiAppId ?? "");
     },
     historyLimit: params.historyLimit,
     dmHistoryLimit: Math.max(0, params.dmHistoryLimit ?? 0),

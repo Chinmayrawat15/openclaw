@@ -170,7 +170,7 @@ function adoptSlackIdentity(params: {
   if (params.installationIdentity?.kind === "enterprise") {
     const botUserId = normalizeOptionalString(params.botUserId) ?? "";
     const botId = normalizeOptionalString(params.botId);
-    params.ctx.setInstallationIdentity(params.installationIdentity);
+    params.ctx.installationIdentity = params.installationIdentity;
     params.ctx.botUserId = botUserId;
     params.ctx.botId = botId;
     params.ctx.identityHealth = resolveSlackIdentityHealth({
@@ -184,7 +184,7 @@ function adoptSlackIdentity(params: {
     return false;
   }
   if (params.installationIdentity?.kind === "workspace") {
-    params.ctx.setInstallationIdentity(params.installationIdentity);
+    params.ctx.installationIdentity = params.installationIdentity;
   }
   params.ctx.botUserId = resolved.botUserId;
   params.ctx.botId = resolved.botId;

@@ -97,11 +97,11 @@ describe("createSlackMonitorContext shouldDropMismatchedSlackEvent", () => {
   it("updates derived identity fields and mismatch guards after auth recovery", () => {
     const ctx = createTestContext();
 
-    ctx.setInstallationIdentity({
+    ctx.installationIdentity = {
       kind: "enterprise",
       apiAppId: "A_ENTERPRISE",
       enterpriseId: "E_ENTERPRISE",
-    });
+    };
 
     expect(ctx.installationIdentity).toEqual({
       kind: "enterprise",
@@ -112,11 +112,11 @@ describe("createSlackMonitorContext shouldDropMismatchedSlackEvent", () => {
     expect(ctx.apiAppId).toBe("A_ENTERPRISE");
     expect(ctx.shouldDropMismatchedSlackEvent({ api_app_id: "A_EXPECTED" })).toBe(true);
 
-    ctx.setInstallationIdentity({
+    ctx.installationIdentity = {
       kind: "workspace",
       apiAppId: "A_RECOVERED",
       teamId: "T_RECOVERED",
-    });
+    };
 
     expect(ctx.teamId).toBe("T_RECOVERED");
     expect(ctx.apiAppId).toBe("A_RECOVERED");

@@ -846,6 +846,41 @@ describe("SystemAgentChatEngine", () => {
     expect(wizardRuns).toEqual(["telegram", "token:123:abc", "mode:open"]);
   });
 
+  it("keeps an unknown channel request pending on the shared picker", async () => {
+    useTempStateDir();
+    const baseConfig = {} as OpenClawConfig;
+    mocks.readSetupConfigFileSnapshot.mockResolvedValue(configSnapshot(baseConfig) as never);
+    mocks.setupChannels.mockImplementation(
+      async (config: OpenClawConfig, _runtime: unknown, prompter: WizardPrompter) => {
+        await prompter.select({
+          message: "Select a channel",
+          options: [
+            { value: "telegram", label: "Telegram" },
+            { value: "discord", label: "Discord" },
+          ],
+        });
+        return config;
+      },
+    );
+    const engine = new SystemAgentChatEngine({
+      runAgentTurn: async () => null,
+      planWithAssistant: async () => null,
+      deps: { loadOverview: fakeOverviewLoader() },
+    });
+
+    const reply = await engine.handle("connect unknown-chat");
+
+    expect(reply.text).toContain("Select a channel");
+    expect(reply.text).not.toContain("is configured");
+    expect(reply.question).toEqual({
+      id: expect.any(String),
+      header: "Choose one",
+      question: "Select a channel",
+      options: [{ label: "Telegram" }, { label: "Discord" }],
+    });
+    expect(mocks.writeWizardConfigFile).not.toHaveBeenCalled();
+  });
+
   it("hosts the real skills setup flow and guards installs plus the final config write", async () => {
     const baseConfig: OpenClawConfig = {
       agents: { defaults: { workspace: "/tmp/skills-workspace" } },

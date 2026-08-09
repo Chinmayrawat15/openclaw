@@ -236,9 +236,19 @@ export async function setupChannels(
     await prompter.note(statusLines.join("\n"), t("wizard.channels.statusTitle"));
   }
 
-  const targetedChannel =
+  const requestedTargetedChannel =
     options?.finishAfterInitialSelection && options.initialSelection?.length === 1
       ? options.initialSelection[0]
+      : undefined;
+  let visibleChannelEntries: ReturnType<typeof resolveVisibleChannelEntries>["entries"] | undefined;
+  const getVisibleChannelEntries = () => {
+    visibleChannelEntries ??= resolveVisibleChannelEntries().entries;
+    return visibleChannelEntries;
+  };
+  const targetedChannel =
+    requestedTargetedChannel &&
+    getVisibleChannelEntries().some((entry) => entry.id === requestedTargetedChannel)
+      ? requestedTargetedChannel
       : undefined;
   const shouldConfigure =
     options?.skipConfirm || targetedChannel
@@ -252,7 +262,7 @@ export async function setupChannels(
   }
 
   if (!targetedChannel) {
-    const primerChannels = resolveVisibleChannelEntries().entries.map((entry) => ({
+    const primerChannels = getVisibleChannelEntries().map((entry) => ({
       id: entry.id,
       label: entry.meta.label,
       blurb: entry.meta.blurb,

@@ -146,7 +146,11 @@ describe("OpenClaw chat channel setup", () => {
       {},
       expect.any(Object),
       expect.any(Object),
-      expect.objectContaining({ beforePersistentEffect: expect.any(Function) }),
+      expect.objectContaining({
+        initialSelection: ["matrix"],
+        finishAfterInitialSelection: true,
+        beforePersistentEffect: expect.any(Function),
+      }),
     );
     expect(mocks.runCollectedChannelOnboardingPostWriteHooks).toHaveBeenCalledWith({
       hooks: [mocks.hook],

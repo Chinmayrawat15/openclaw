@@ -893,6 +893,42 @@ describe("setupChannels workspace shadow exclusion", () => {
     });
   });
 
+  it("keeps an unknown targeted channel in the shared picker flow", async () => {
+    const externalChatPlugin = makeSetupPlugin({
+      id: "external-chat",
+      label: "External Chat",
+    });
+    resolveChannelSetupEntries.mockReturnValue(externalChatSetupEntries());
+    listActiveChannelSetupPlugins.mockReturnValue([externalChatPlugin]);
+    const select = vi.fn(async () => "__done__");
+    const cfg = { channels: { telegram: { botToken: "keep" } } } as OpenClawConfig;
+
+    const result = await setupChannels(
+      cfg,
+      {} as never,
+      {
+        confirm: vi.fn(async () => true),
+        note: vi.fn(async () => undefined),
+        select,
+      } as never,
+      {
+        initialSelection: ["unknown-chat"],
+        finishAfterInitialSelection: true,
+        deferStatusUntilSelection: true,
+        skipConfirm: true,
+        skipDmPolicyPrompt: true,
+      },
+    );
+
+    expect(noteChannelPrimer).toHaveBeenCalledTimes(1);
+    expect(select).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: "Select a channel",
+      }),
+    );
+    expect(result).toEqual(cfg);
+  });
+
   it("returns targeted channel setup Back navigation to the channel picker", async () => {
     const promptOrder: string[] = [];
     const configureInteractive = vi.fn(async ({ prompter }) => {

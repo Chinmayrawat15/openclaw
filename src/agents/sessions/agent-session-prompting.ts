@@ -402,6 +402,7 @@ export abstract class AgentSessionPrompting extends AgentSessionBase {
       ? attachRuntimePromptMediaFacts(runtimeMessage, media, imageOrder)
       : runtimeMessage;
     setSteeringMessageIdentity(promptMessage, queueIdentity);
+    this.queuedUserMessages.set(promptMessage, { queue: this.steeringMessages, text });
     this.agent.steer(
       transcriptContext
         ? attachRuntimeUserTurnTranscriptContext(promptMessage, transcriptContext)
@@ -415,11 +416,13 @@ export abstract class AgentSessionPrompting extends AgentSessionBase {
   private async queueFollowUp(text: string, images?: ImageContent[]): Promise<void> {
     this.followUpMessages.push(text);
     this.emitQueueUpdate();
-    this.agent.followUp({
+    const message = {
       role: "user",
       content: this.createUserContent(text, images),
       timestamp: Date.now(),
-    });
+    } satisfies AgentMessage;
+    this.queuedUserMessages.set(message, { queue: this.followUpMessages, text });
+    this.agent.followUp(message);
   }
 
   /**

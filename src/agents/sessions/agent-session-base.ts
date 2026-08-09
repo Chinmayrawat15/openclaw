@@ -15,7 +15,6 @@ import type {
   AgentSessionEventListener,
   AgentSessionWriteLockRunner,
 } from "./agent-session-types.js";
-import { extractTextContent } from "./agent-session-utils.js";
 import { formatNoApiKeyFoundMessage } from "./auth-guidance.js";
 import {
   type ExtensionCommandContextActions,
@@ -74,6 +73,8 @@ export abstract class AgentSessionBase {
   protected steeringMessages: string[] = [];
   /** Tracks pending follow-up messages for UI display. Removed when delivered. */
   protected followUpMessages: string[] = [];
+  /** Message identity keeps empty and duplicate-text turns attached to their exact queue. */
+  protected queuedUserMessages = new WeakMap<AgentMessage, { queue: string[]; text: string }>();
   /** Messages queued to be included with the next user prompt as context ("asides"). */
   protected pendingNextTurnMessages: CustomMessage[] = [];
 
@@ -338,20 +339,13 @@ export abstract class AgentSessionBase {
     // This ensures the UI sees the updated queue state
     if (event.type === "message_start" && event.message.role === "user") {
       this.overflowRecoveryAttempted = false;
-      const messageText = extractTextContent(event.message.content);
-      if (messageText) {
-        // Check steering queue first
-        const steeringIndex = this.steeringMessages.indexOf(messageText);
-        if (steeringIndex !== -1) {
-          this.steeringMessages.splice(steeringIndex, 1);
+      const queuedMessage = this.queuedUserMessages.get(event.message);
+      if (queuedMessage) {
+        this.queuedUserMessages.delete(event.message);
+        const queueIndex = queuedMessage.queue.indexOf(queuedMessage.text);
+        if (queueIndex !== -1) {
+          queuedMessage.queue.splice(queueIndex, 1);
           this.emitQueueUpdate();
-        } else {
-          // Check follow-up queue
-          const followUpIndex = this.followUpMessages.indexOf(messageText);
-          if (followUpIndex !== -1) {
-            this.followUpMessages.splice(followUpIndex, 1);
-            this.emitQueueUpdate();
-          }
         }
       }
     }

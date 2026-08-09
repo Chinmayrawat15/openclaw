@@ -8,6 +8,8 @@ import {
   isAgentRunRestartAbortReason,
   isAgentRunSupersededAbortReason,
 } from "../../run-termination.js";
+import { createTestSession } from "../../sessions/agent-session-loop-correctness.test-support.js";
+import type { AgentSession } from "../../sessions/agent-session.js";
 import {
   projectToolSearchTargetTranscriptMessages,
   type ToolSearchTargetTranscriptProjection,
@@ -59,6 +61,8 @@ function prepareCatalogExecutor(
     sandboxSessionKey?: string;
     sessionKey?: string;
     replyOperation?: ReplyOperation;
+    activeSession?: AgentSession;
+    hookRunner?: Parameters<typeof prepareEmbeddedAttemptStream>[0]["hookRunner"];
     onAttemptAbort?: () => void;
     abortRun?: (isTimeout?: boolean, reason?: unknown) => void;
     markExternalAbort?: () => void;
@@ -73,8 +77,8 @@ function prepareCatalogExecutor(
       replyOperation: options?.replyOperation,
       onAttemptAbort: options?.onAttemptAbort,
     } as never,
-    activeSession: { agent: {}, isStreaming: false } as never,
-    hookRunner: undefined as never,
+    activeSession: options?.activeSession ?? ({ agent: {}, isStreaming: false } as never),
+    hookRunner: options?.hookRunner ?? (undefined as never),
     hookAgentId: "main",
     diagnosticTrace: {} as never,
     clientToolCallSlots: [],
@@ -263,6 +267,74 @@ describe("prepareEmbeddedAttemptStream", () => {
     expect(prepared.queueHandle.isStopped?.()).toBe(false);
     resolveSteer?.();
     await queued;
+  });
+
+  it.each([
+    {
+      kind: "steering",
+      queueName: "steeringQueue" as const,
+      queue: (session: AgentSession, image: { type: "image"; data: string; mimeType: string }) =>
+        session.steer("", [image]),
+    },
+    {
+      kind: "follow-up",
+      queueName: "followUpQueue" as const,
+      queue: (session: AgentSession, image: { type: "image"; data: string; mimeType: string }) =>
+        session.followUp("", [image]),
+    },
+  ])("runs before_agent_finalize after image-only $kind is delivered", async (scenario) => {
+    const { session } = await createTestSession();
+    const image = { type: "image" as const, data: "aW1hZ2U=", mimeType: "image/png" };
+
+    try {
+      await scenario.queue(session, image);
+      type QueuedMessage = Parameters<AgentSession["agent"]["steer"]>[0];
+      const queues = session.agent as unknown as Record<
+        "steeringQueue" | "followUpQueue",
+        { messages: QueuedMessage[] }
+      >;
+      const message = queues[scenario.queueName].messages.shift();
+      if (!message) {
+        throw new Error(`expected queued ${scenario.kind} message`);
+      }
+      const handleAgentEvent = Reflect.get(session, "handleAgentEvent") as (event: {
+        type: "message_start" | "message_end";
+        message: QueuedMessage;
+      }) => Promise<void>;
+      await handleAgentEvent({ type: "message_start", message });
+      await handleAgentEvent({ type: "message_end", message });
+
+      const prepared = prepareCatalogExecutor([], {
+        activeSession: session,
+        hookRunner: { hasHooks: (name: string) => name === "before_agent_finalize" } as never,
+      });
+      const subscriptionInput = mocks.buildSubscriptionParams.mock.calls.at(-1)?.[0] as {
+        onBeforeTerminalDelivery?: (event: unknown) => Promise<unknown>;
+      };
+      await expect(
+        subscriptionInput.onBeforeTerminalDelivery?.({
+          messages: session.messages,
+          willRetry: false,
+          assistantEntryId: "canonical-entry-id",
+          lastAssistant: {
+            role: "assistant",
+            content: [{ type: "text", text: "Image answer" }],
+            stopReason: "stop",
+          },
+          assistantTexts: ["Image answer"],
+          hasAssistantVisibleText: true,
+          isError: false,
+          incompleteTerminalAssistant: false,
+          hadDeterministicSideEffect: false,
+        }),
+      ).resolves.toBeUndefined();
+
+      expect(session.pendingMessageCount).toBe(0);
+      expect(mocks.runBeforeFinalizeHook).toHaveBeenCalledOnce();
+      expect(prepared.queueHandle.isStopped?.()).toBe(false);
+    } finally {
+      session.dispose();
+    }
   });
 
   it("routes live events to the transcript session instead of the sandbox authority session", () => {

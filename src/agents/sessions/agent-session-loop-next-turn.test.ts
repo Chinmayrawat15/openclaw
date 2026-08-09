@@ -111,6 +111,128 @@ describe("AgentSession queue and next-turn lifecycle correctness", () => {
   it.each([
     {
       kind: "steering",
+      queue: (session: AgentSession, image: { type: "image"; data: string; mimeType: string }) =>
+        session.steer("", [image]),
+      initialQueue: { steering: [""], followUp: [] },
+    },
+    {
+      kind: "follow-up",
+      queue: (session: AgentSession, image: { type: "image"; data: string; mimeType: string }) =>
+        session.followUp("", [image]),
+      initialQueue: { steering: [], followUp: [""] },
+    },
+  ])("retires an image-only $kind before terminal finalization", async (scenario) => {
+    const image = { type: "image" as const, data: "aW1hZ2U=", mimeType: "image/png" };
+    const requests: Context[] = [];
+    let finishInitialResponse: (() => void) | undefined;
+    streamMocks.streamSimple.mockImplementation((activeModel: Model, context: Context) => {
+      requests.push(context);
+      if (requests.length === 1) {
+        const stream = createAssistantMessageEventStream();
+        finishInitialResponse = () => {
+          const message = createAssistant(activeModel, [{ type: "text", text: "first answer" }]);
+          stream.push({ type: "done", reason: "stop", message });
+          stream.end();
+        };
+        return stream;
+      }
+      return createAssistantResultStream(
+        createAssistant(activeModel, [{ type: "text", text: "image answer" }]),
+      );
+    });
+    const { session, sessionManager } = await createTestSession();
+    const queueEvents: Array<{
+      type: "queue_update" | "image_message_start";
+      steering: readonly string[];
+      followUp: readonly string[];
+    }> = [];
+    const finalizeSettledRun = vi.fn();
+    session.subscribe((event) => {
+      if (event.type === "queue_update") {
+        queueEvents.push({
+          type: "queue_update",
+          steering: event.steering,
+          followUp: event.followUp,
+        });
+      } else if (
+        event.type === "message_start" &&
+        event.message.role === "user" &&
+        Array.isArray(event.message.content) &&
+        event.message.content.some((part) => part.type === "image")
+      ) {
+        queueEvents.push({
+          type: "image_message_start",
+          steering: [...session.getSteeringMessages()],
+          followUp: [...session.getFollowUpMessages()],
+        });
+      } else if (
+        event.type === "agent_end" &&
+        session.pendingMessageCount === 0 &&
+        !session.agent.hasQueuedMessages()
+      ) {
+        finalizeSettledRun();
+      }
+    });
+    const initialPrompt = session.prompt("describe the next image");
+    await vi.waitFor(() => expect(requests).toHaveLength(1));
+
+    await scenario.queue(session, image);
+    expect(session.pendingMessageCount).toBe(1);
+    finishInitialResponse?.();
+    await initialPrompt;
+
+    expect(requests).toHaveLength(2);
+    expect(requests[1]?.messages).toContainEqual(
+      expect.objectContaining({ role: "user", content: [{ type: "text", text: "" }, image] }),
+    );
+    expect(sessionManager.getEntries()).toContainEqual(
+      expect.objectContaining({
+        type: "message",
+        message: expect.objectContaining({
+          role: "user",
+          content: [{ type: "text", text: "" }, image],
+        }),
+      }),
+    );
+    expect(session.pendingMessageCount).toBe(0);
+    expect(session.getSteeringMessages()).toEqual([]);
+    expect(session.getFollowUpMessages()).toEqual([]);
+    expect(queueEvents).toEqual([
+      { type: "queue_update", ...scenario.initialQueue },
+      { type: "queue_update", steering: [], followUp: [] },
+      { type: "image_message_start", steering: [], followUp: [] },
+    ]);
+    expect(finalizeSettledRun).toHaveBeenCalledOnce();
+  });
+
+  it("retires duplicate-text messages from their owning queue", async () => {
+    const { session } = await createTestSession();
+    await session.steer("same queued text");
+    await session.followUp("same queued text");
+    const followUpMessages = (
+      session.agent as unknown as {
+        followUpQueue: { messages: Parameters<AgentSession["agent"]["followUp"]>[0][] };
+      }
+    ).followUpQueue.messages;
+    const message = followUpMessages.shift();
+    if (!message) {
+      throw new Error("expected queued follow-up message");
+    }
+    const handleAgentEvent = Reflect.get(session, "handleAgentEvent") as (event: {
+      type: "message_start";
+      message: typeof message;
+    }) => Promise<void>;
+
+    await handleAgentEvent({ type: "message_start", message });
+
+    expect(session.getSteeringMessages()).toEqual(["same queued text"]);
+    expect(session.getFollowUpMessages()).toEqual([]);
+    expect(session.pendingMessageCount).toBe(1);
+  });
+
+  it.each([
+    {
+      kind: "steering",
       queue: (session: AgentSession) => session.steer("keep queued steering"),
       messages: (session: AgentSession) => session.getSteeringMessages(),
       expected: "keep queued steering",

@@ -24,6 +24,8 @@ const GATEWAY_ENVIRONMENT: EnvironmentSummary = {
   type: "local",
   label: "Gateway local",
   status: "available",
+  trust: "persistent",
+  sessionHost: true,
   capabilities: ["agent.run", "sessions", "tools", "workspace"],
 };
 const WORKER_STATUS: Record<WorkerEnvironmentState, EnvironmentSummary["status"]> = {
@@ -58,6 +60,9 @@ function summarizeNodeEnvironment(node: NodeListNode): EnvironmentSummary {
     type: "node",
     label: node.displayName ?? node.nodeId,
     status: node.connected ? "available" : "unavailable",
+    trust: "persistent",
+    sessionHost: false,
+    ...(node.platform ? { platform: node.platform } : {}),
     ...(capabilities.length > 0 ? { capabilities } : {}),
   };
 }
@@ -70,6 +75,8 @@ export function summarizeWorkerEnvironment(
     id: record.environmentId,
     type: "worker",
     status: WORKER_STATUS[record.state],
+    trust: "disposable",
+    sessionHost: true,
     worker: {
       providerId: record.providerId,
       ...(record.leaseId ? { leaseId: record.leaseId } : {}),
@@ -122,7 +129,9 @@ export function listWorkerProfiles(context: GatewayRequestContext) {
   return Object.entries(profiles)
     .flatMap(([id, profile]) => {
       const providerId = typeof profile.provider === "string" ? profile.provider.trim() : "";
-      return id.trim() && providerId ? [{ id: id.trim(), providerId }] : [];
+      return id.trim() && providerId
+        ? [{ id: id.trim(), providerId, trust: "disposable" as const, sessionHost: true }]
+        : [];
     })
     .toSorted((left, right) => left.id.localeCompare(right.id));
 }

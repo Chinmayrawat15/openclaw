@@ -335,7 +335,7 @@ suite.define(() => {
         },
         "environments.list": {
           environments: [],
-          profiles: [{ id: "aws", providerId: "crabbox" }],
+          profiles: [{ id: "aws", providerId: "crabbox", trust: "disposable", sessionHost: true }],
         },
         "worktrees.branches": {
           branches: [{ kind: "local", name: "main" }],
@@ -416,7 +416,7 @@ suite.define(() => {
         },
         "environments.list": {
           environments: [],
-          profiles: [{ id: "aws", providerId: "crabbox" }],
+          profiles: [{ id: "aws", providerId: "crabbox", trust: "disposable", sessionHost: true }],
         },
         "worktrees.branches": {
           branches: [{ kind: "local", name: "main" }],
@@ -551,7 +551,7 @@ suite.define(() => {
         },
         "environments.list": {
           environments: [],
-          profiles: [{ id: "aws", providerId: "crabbox" }],
+          profiles: [{ id: "aws", providerId: "crabbox", trust: "disposable", sessionHost: true }],
         },
         "worktrees.branches": {
           branches: [{ kind: "local", name: "main" }],
@@ -683,7 +683,7 @@ suite.define(() => {
         },
         "environments.list": {
           environments: [],
-          profiles: [{ id: "aws", providerId: "crabbox" }],
+          profiles: [{ id: "aws", providerId: "crabbox", trust: "disposable", sessionHost: true }],
         },
         "worktrees.branches": {
           branches: [{ kind: "local", name: "main" }],
@@ -762,7 +762,7 @@ suite.define(() => {
         },
         "environments.list": {
           environments: [],
-          profiles: [{ id: "aws", providerId: "crabbox" }],
+          profiles: [{ id: "aws", providerId: "crabbox", trust: "disposable", sessionHost: true }],
         },
         "worktrees.branches": {
           branches: [{ kind: "local", name: "main" }],
@@ -851,7 +851,7 @@ suite.define(() => {
         },
         "environments.list": {
           environments: [],
-          profiles: [{ id: "aws", providerId: "crabbox" }],
+          profiles: [{ id: "aws", providerId: "crabbox", trust: "disposable", sessionHost: true }],
         },
         "worktrees.branches": {
           branches: [{ kind: "local", name: "main" }],

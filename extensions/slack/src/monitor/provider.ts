@@ -156,6 +156,15 @@ function resolveSlackRuntimeIdentity(params: {
   };
 }
 
+function applySlackInstallationIdentity(
+  ctx: SlackMonitorContext,
+  identity: SlackInstallationIdentity,
+) {
+  ctx.installationIdentity = identity;
+  ctx.teamId = identity.kind === "workspace" ? identity.teamId : "";
+  ctx.apiAppId = identity.kind === "degraded" ? "" : (identity.apiAppId ?? "");
+}
+
 function adoptSlackIdentity(params: {
   ctx: SlackMonitorContext;
   identity: "bot" | "user";
@@ -170,7 +179,7 @@ function adoptSlackIdentity(params: {
   if (params.installationIdentity?.kind === "enterprise") {
     const botUserId = normalizeOptionalString(params.botUserId) ?? "";
     const botId = normalizeOptionalString(params.botId);
-    params.ctx.installationIdentity = params.installationIdentity;
+    applySlackInstallationIdentity(params.ctx, params.installationIdentity);
     params.ctx.botUserId = botUserId;
     params.ctx.botId = botId;
     params.ctx.identityHealth = resolveSlackIdentityHealth({
@@ -184,7 +193,7 @@ function adoptSlackIdentity(params: {
     return false;
   }
   if (params.installationIdentity?.kind === "workspace") {
-    params.ctx.installationIdentity = params.installationIdentity;
+    applySlackInstallationIdentity(params.ctx, params.installationIdentity);
   }
   params.ctx.botUserId = resolved.botUserId;
   params.ctx.botId = resolved.botId;

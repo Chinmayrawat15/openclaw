@@ -26,8 +26,15 @@ function resolvePrimaryRoot(repoRoot) {
 }
 
 function resolveTsxImport(repoRoot) {
+  const externalModulesDir =
+    process.env.PNPM_CONFIG_MODULES_DIR?.trim() || process.env.npm_config_modules_dir?.trim();
+  const externalTsxRoot = externalModulesDir
+    ? path.join(path.resolve(repoRoot, externalModulesDir), "tsx")
+    : null;
   let resolutionError;
-  for (const candidateRoot of [repoRoot, resolvePrimaryRoot(repoRoot)].filter(Boolean)) {
+  for (const candidateRoot of [externalTsxRoot, repoRoot, resolvePrimaryRoot(repoRoot)].filter(
+    Boolean,
+  )) {
     try {
       const require = createRequire(path.join(candidateRoot, "package.json"));
       return pathToFileURL(require.resolve("tsx")).href;

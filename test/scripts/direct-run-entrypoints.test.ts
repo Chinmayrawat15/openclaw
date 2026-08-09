@@ -1,5 +1,14 @@
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import {
+  copyFileSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { detectChangedScope } from "../../scripts/ci-changed-scope.mjs";
@@ -71,6 +80,54 @@ function runEntrypoint(entrypoint: (typeof EXECUTABLE_ENTRYPOINTS)[number]) {
   });
 }
 
+function runExternallyHydratedEntrypoint(params: {
+  modulesEnvKey: "PNPM_CONFIG_MODULES_DIR" | "npm_config_modules_dir";
+  script: "run-vitest.mjs" | "check-changed.mjs";
+}) {
+  const fixtureRoot = realpathSync(mkdtempSync(path.join(tmpdir(), "openclaw-tsx-cli-shim-")));
+  const checkoutRoot = path.join(fixtureRoot, "checkout");
+  const scriptsDir = path.join(checkoutRoot, "scripts");
+  const externalModulesDir = path.join(fixtureRoot, "hydrated-pnpm-modules");
+  const externalTsxDir = path.join(externalModulesDir, "tsx");
+  try {
+    mkdirSync(path.join(scriptsDir, "lib"), { recursive: true });
+    mkdirSync(externalTsxDir, { recursive: true });
+    copyFileSync(
+      path.resolve("scripts/lib/tsx-cli-shim.mjs"),
+      path.join(scriptsDir, "lib", "tsx-cli-shim.mjs"),
+    );
+    copyFileSync(path.resolve("scripts", params.script), path.join(scriptsDir, params.script));
+    writeFileSync(
+      path.join(externalTsxDir, "package.json"),
+      JSON.stringify({ name: "tsx", type: "module", exports: "./loader.mjs" }),
+    );
+    writeFileSync(
+      path.join(externalTsxDir, "loader.mjs"),
+      'process.env.OPENCLAW_TSX_FIXTURE_LOADER = "loaded";\n',
+    );
+    writeFileSync(
+      path.join(scriptsDir, params.script.replace(/\.mjs$/, ".mts")),
+      "process.stdout.write(JSON.stringify({ loader: process.env.OPENCLAW_TSX_FIXTURE_LOADER, args: process.argv.slice(2) }));\n",
+    );
+    const env = { ...process.env, [params.modulesEnvKey]: externalModulesDir };
+    delete env.NODE_PATH;
+    delete env.NODE_OPTIONS;
+    delete env[
+      params.modulesEnvKey === "PNPM_CONFIG_MODULES_DIR"
+        ? "npm_config_modules_dir"
+        : "PNPM_CONFIG_MODULES_DIR"
+    ];
+    return spawnSync(process.execPath, [path.join(scriptsDir, params.script), "--hydrated-proof"], {
+      cwd: checkoutRoot,
+      encoding: "utf8",
+      env,
+      timeout: 10_000,
+    });
+  } finally {
+    rmSync(fixtureRoot, { recursive: true, force: true });
+  }
+}
+
 describe("script direct-run entrypoints", () => {
   it.each(EXECUTABLE_ENTRYPOINTS)("runs $script through its guarded CLI", (entrypoint) => {
     const result = runEntrypoint(entrypoint);
@@ -79,6 +136,22 @@ describe("script direct-run entrypoints", () => {
     expect(result.error).toBeUndefined();
     expect(result.status).toBe(entrypoint.status);
     expect(output).toContain(entrypoint.output);
+  });
+
+  it.each([
+    { modulesEnvKey: "PNPM_CONFIG_MODULES_DIR", script: "run-vitest.mjs" },
+    { modulesEnvKey: "npm_config_modules_dir", script: "run-vitest.mjs" },
+    { modulesEnvKey: "PNPM_CONFIG_MODULES_DIR", script: "check-changed.mjs" },
+    { modulesEnvKey: "npm_config_modules_dir", script: "check-changed.mjs" },
+  ] as const)("boots $script from external $modulesEnvKey", (params) => {
+    const result = runExternallyHydratedEntrypoint(params);
+
+    expect(result.error).toBeUndefined();
+    expect(result.status, result.stderr).toBe(0);
+    expect(JSON.parse(result.stdout)).toEqual({
+      loader: "loaded",
+      args: ["--hydrated-proof"],
+    });
   });
 
   it("matches Windows drive paths case-insensitively", () => {
@@ -102,6 +175,7 @@ describe("script direct-run entrypoints", () => {
   it.each([
     ...DIRECT_RUN_SCRIPTS,
     "scripts/lib/direct-run.mjs",
+    "scripts/lib/tsx-cli-shim.mjs",
     "test/scripts/direct-run-entrypoints.test.ts",
   ])("routes %s through Windows CI", (changedPath) => {
     expect(detectChangedScope([changedPath]).runWindows).toBe(true);

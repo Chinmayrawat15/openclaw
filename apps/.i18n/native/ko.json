@@ -24,6 +24,36 @@
       "translated": "Android 설정 따르기 · $systemLanguageTag"
     },
     {
+      "id": "native.android.0eb613765dffd7d5",
+      "source": "Chat failed",
+      "translated": "채팅 실패"
+    },
+    {
+      "id": "native.android.49b641d61b32710e",
+      "source": "Reply to OpenClaw…",
+      "translated": "OpenClaw에 답장…"
+    },
+    {
+      "id": "native.android.c17863b62b70d822",
+      "source": "Reply",
+      "translated": "답장"
+    },
+    {
+      "id": "native.android.8700c1dee5524079",
+      "source": "OpenClaw",
+      "translated": "OpenClaw"
+    },
+    {
+      "id": "native.android.2028e1559e760da1",
+      "source": "You",
+      "translated": "나"
+    },
+    {
+      "id": "native.android.38a6e56b90d42b9f",
+      "source": "Chat",
+      "translated": "채팅"
+    },
+    {
       "id": "native.android.2932b1c5134668df",
       "source": "Every ${days}d",
       "translated": "${days}일마다"
@@ -18619,6 +18649,11 @@
       "translated": "업데이트 확인…"
     },
     {
+      "id": "native.apple.2318ba3118a022eb",
+      "source": "App updates are unavailable while a profile is active.",
+      "translated": "프로필이 활성화된 동안에는 앱 업데이트를 사용할 수 없습니다."
+    },
+    {
       "id": "native.apple.ddec1d4e5e5b43cb",
       "source": "Updates unavailable in this build.",
       "translated": "이 빌드에서는 업데이트를 사용할 수 없습니다."
@@ -20209,6 +20244,11 @@
       "translated": "참고: macOS에서는 손쉬운 사용 또는 화면 기록을 활성화한 후 OpenClaw를 다시 시작해야 할 수 있습니다."
     },
     {
+      "id": "native.apple.974d1478dd99ffb0",
+      "source": "Login-agent restart is unavailable under a profile.",
+      "translated": "프로필에서는 로그인 에이전트 재시작을 사용할 수 없습니다."
+    },
+    {
       "id": "native.apple.e52d463773aef1e1",
       "source": "Restart OpenClaw",
       "translated": "OpenClaw 재시작"
@@ -20322,11 +20362,6 @@
       "id": "native.apple.e7d1ee5662c1d646",
       "source": "Degraded",
       "translated": "성능 저하"
-    },
-    {
-      "id": "native.apple.0397fa643df26663",
-      "source": "Test",
-      "translated": "테스트"
     },
     {
       "id": "native.apple.a8af393b84d63ab8",
@@ -20519,14 +20554,14 @@
       "translated": "Gateway 연결에 실패했습니다."
     },
     {
-      "id": "native.apple.8a9259535246e7cf",
-      "source": "OpenClaw needs attention",
-      "translated": "OpenClaw 주의 필요"
-    },
-    {
       "id": "native.apple.412b40dec8b94e09",
       "source": "Open Connection settings to fix it.",
       "translated": "연결 설정을 열어 문제를 해결하세요."
+    },
+    {
+      "id": "native.apple.8a9259535246e7cf",
+      "source": "OpenClaw needs attention",
+      "translated": "OpenClaw 주의 필요"
     },
     {
       "id": "native.apple.0bec3829fd3ff778",
@@ -20747,16 +20782,6 @@
       "id": "native.apple.a861b3a0aafb24cc",
       "source": "Launch at login",
       "translated": "로그인 시 실행"
-    },
-    {
-      "id": "native.apple.405e74c96498b7c0",
-      "source": "Automatically start OpenClaw after you sign in.",
-      "translated": "로그인하면 OpenClaw를 자동으로 시작합니다."
-    },
-    {
-      "id": "native.apple.8b74758a60f78642",
-      "source": "Move OpenClaw to Applications before enabling launch at login.",
-      "translated": "로그인 시 실행을 활성화하기 전에 OpenClaw를 응용 프로그램 폴더로 옮기세요."
     },
     {
       "id": "native.apple.927819c087ca3520",
@@ -21199,6 +21224,21 @@
       "translated": "로그 열기"
     },
     {
+      "id": "native.apple.39f0173209fd7e74",
+      "source": "Launch at login is unavailable while an app profile is active.",
+      "translated": "앱 프로필이 활성화된 동안에는 로그인 시 실행을 사용할 수 없습니다."
+    },
+    {
+      "id": "native.apple.405e74c96498b7c0",
+      "source": "Automatically start OpenClaw after you sign in.",
+      "translated": "로그인하면 OpenClaw를 자동으로 시작합니다."
+    },
+    {
+      "id": "native.apple.8b74758a60f78642",
+      "source": "Move OpenClaw to Applications before enabling launch at login.",
+      "translated": "로그인 시 실행을 활성화하기 전에 OpenClaw를 응용 프로그램 폴더로 옮기세요."
+    },
+    {
       "id": "native.apple.4d96b20de25a9ddf",
       "source": "probe degraded",
       "translated": "프로브 성능 저하"
@@ -21312,21 +21352,6 @@
       "id": "native.apple.12d83e5f01c98fc0",
       "source": "\\(status.label) presence",
       "translated": "\\(status.label) presence"
-    },
-    {
-      "id": "native.apple.ee499f632a5076c5",
-      "source": "Android",
-      "translated": "Android"
-    },
-    {
-      "id": "native.apple.57ca2baac54a05fc",
-      "source": "Sparkles",
-      "translated": "반짝임"
-    },
-    {
-      "id": "native.apple.c9a63d0f5247185d",
-      "source": "Plain",
-      "translated": "일반"
     },
     {
       "id": "native.apple.3f4378c2de189ec9",
@@ -21782,6 +21807,11 @@
       "id": "native.apple.4443962db00a2def",
       "source": "\\(self.label):",
       "translated": "\\(self.label):"
+    },
+    {
+      "id": "native.apple.5ca13315339f6c15",
+      "source": "Persistent Mac node service unavailable under app profile; runtime node remains available.",
+      "translated": "앱 프로필에서는 영구 Mac 노드 서비스를 사용할 수 없습니다. 런타임 노드는 계속 사용할 수 있습니다."
     },
     {
       "id": "native.apple.800d9fd07f5dde85",

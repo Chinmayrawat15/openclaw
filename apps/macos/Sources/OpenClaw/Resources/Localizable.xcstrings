@@ -10201,142 +10201,6 @@
         }
       }
     },
-    "Android": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Android"
-          }
-        },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Android"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Android"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Android"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Android"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Android"
-          }
-        },
-        "ja-JP": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Android"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Android"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Android"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Android"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Android"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Android"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Android"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Android"
-          }
-        },
-        "id": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Android"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Android"
-          }
-        },
-        "th": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Android"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Android"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Android"
-          }
-        },
-        "fa": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Android"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Android"
-          }
-        },
-        "sv": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Android"
-          }
-        }
-      }
-    },
     "Announce summary": {
       "localizations": {
         "en": {
@@ -11829,6 +11693,142 @@
           "stringUnit": {
             "state": "translated",
             "value": "Appsession"
+          }
+        }
+      }
+    },
+    "App updates are unavailable while a profile is active.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App updates are unavailable while a profile is active."
+          }
+        },
+        "zh-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "配置文件处于活动状态时无法进行应用更新。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當設定檔啟用時，無法更新應用程式。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As atualizações do app não estão disponíveis enquanto um perfil está ativo."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App-Updates sind nicht verfügbar, während ein Profil aktiv ist."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las actualizaciones de la aplicación no están disponibles mientras hay un perfil activo."
+          }
+        },
+        "ja-JP": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プロファイルが有効な間はアプリのアップデートを利用できません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "프로필이 활성화된 동안에는 앱 업데이트를 사용할 수 없습니다."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les mises à jour de l’application ne sont pas disponibles lorsqu’un profil est actif."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "जब कोई प्रोफ़ाइल सक्रिय हो तब ऐप अपडेट उपलब्ध नहीं होते।"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تحديثات التطبيق غير متاحة أثناء تفعيل ملف تعريف."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gli aggiornamenti dell'app non sono disponibili mentre un profilo è attivo."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir profil etkinken uygulama güncellemeleri kullanılamaz."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Оновлення програми недоступні, поки активний профіль."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pembaruan aplikasi tidak tersedia saat profil aktif."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktualizacje aplikacji są niedostępne, gdy profil jest aktywny."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไม่สามารถอัปเดตแอปได้ขณะที่โปรไฟล์กำลังทำงานอยู่"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể cập nhật ứng dụng khi một hồ sơ đang hoạt động."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App-updates zijn niet beschikbaar wanneer een profiel actief is."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "زمانی که یک پروفایل فعال است، به‌روزرسانی‌های برنامه در دسترس نیستند."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обновления приложения недоступны, пока активен профиль."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appuppdateringar är inte tillgängliga när en profil är aktiv."
           }
         }
       }
@@ -65281,6 +65281,142 @@
         }
       }
     },
+    "Launch at login is unavailable while an app profile is active.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Launch at login is unavailable while an app profile is active."
+          }
+        },
+        "zh-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "应用配置文件处于活动状态时无法启用登录时启动。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "當應用程式設定檔啟用時，無法在登入時啟動。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A inicialização ao fazer login não está disponível enquanto um perfil de app está ativo."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beim Anmelden starten ist nicht verfügbar, während ein App-Profil aktiv ist."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El inicio al arrancar sesión no está disponible mientras hay un perfil de aplicación activo."
+          }
+        },
+        "ja-JP": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アプリプロファイルが有効な間はログイン時の起動を利用できません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "앱 프로필이 활성화된 동안에는 로그인 시 실행을 사용할 수 없습니다."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le lancement au démarrage n’est pas disponible lorsqu’un profil d’application est actif."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "जब कोई ऐप प्रोफ़ाइल सक्रिय हो तब लॉगिन पर लॉन्च उपलब्ध नहीं है।"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التشغيل عند تسجيل الدخول غير متاح أثناء تفعيل ملف تعريف التطبيق."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'avvio all'accesso non è disponibile mentre un profilo app è attivo."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir uygulama profili etkinken oturum açıldığında başlatma kullanılamaz."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запуск під час входу недоступний, поки активний профіль програми."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luncurkan saat login tidak tersedia saat profil aplikasi aktif."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uruchamianie przy logowaniu jest niedostępne, gdy profil aplikacji jest aktywny."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไม่สามารถเปิดใช้งานการเริ่มต้นเมื่อเข้าสู่ระบบได้ขณะที่โปรไฟล์แอปกำลังทำงานอยู่"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể khởi chạy khi đăng nhập trong khi một hồ sơ ứng dụng đang hoạt động."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starten bij aanmelden is niet beschikbaar wanneer een app-profiel actief is."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "زمانی که یک پروفایل برنامه فعال است، اجرا هنگام ورود در دسترس نیست."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запуск при входе недоступен, пока активен профиль приложения."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Starta vid inloggning är inte tillgängligt när en appprofil är aktiv."
+          }
+        }
+      }
+    },
     "Legacy pane — this now lives in the Dashboard": {
       "localizations": {
         "en": {
@@ -70037,6 +70173,142 @@
           "stringUnit": {
             "state": "translated",
             "value": "Utloggad och autentiseringsuppgifter rensade."
+          }
+        }
+      }
+    },
+    "Login-agent restart is unavailable under a profile.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Login-agent restart is unavailable under a profile."
+          }
+        },
+        "zh-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在配置文件下无法重启登录代理。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在設定檔下無法重新啟動 login-agent。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A reinicialização do agente de login não está disponível em um perfil."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Neustart des Login-Agents ist unter einem Profil nicht verfügbar."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El reinicio del agente de inicio de sesión no está disponible con un perfil."
+          }
+        },
+        "ja-JP": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プロファイル下ではログインエージェントの再起動を利用できません。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "프로필에서는 로그인 에이전트 재시작을 사용할 수 없습니다."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le redémarrage de l’agent de connexion n’est pas disponible sous un profil."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "प्रोफ़ाइल के अंतर्गत login-agent पुनरारंभ उपलब्ध नहीं है।"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إعادة تشغيل وكيل تسجيل الدخول غير متاحة ضمن ملف تعريف."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il riavvio del login-agent non è disponibile con un profilo."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profil altında oturum aracısı yeniden başlatma kullanılamaz."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перезапуск агента входу недоступний за профілю."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mulai ulang login-agent tidak tersedia di bawah profil."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ponowne uruchomienie agenta logowania jest niedostępne w ramach profilu."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไม่สามารถรีสตาร์ท login-agent ภายใต้โปรไฟล์ได้"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể khởi động lại login-agent khi đang dùng hồ sơ."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Herstarten van de login-agent is niet beschikbaar onder een profiel."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "راه‌اندازی مجدد login-agent تحت یک پروفایل در دسترس نیست."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перезапуск агента входа недоступен под профилем."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Omstart av inloggningsagent är inte tillgänglig under en profil."
           }
         }
       }
@@ -97241,6 +97513,142 @@
         }
       }
     },
+    "Persistent Mac node service unavailable under app profile; runtime node remains available.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Persistent Mac node service unavailable under app profile; runtime node remains available."
+          }
+        },
+        "zh-CN": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在应用配置文件下无法使用持久化的 Mac 节点服务；运行时节点仍然可用。"
+          }
+        },
+        "zh-TW": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在應用程式設定檔下無法使用持續性 Mac 節點服務；執行階段節點仍然可用。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O serviço de nó persistente do Mac não está disponível no perfil de app; o nó de runtime permanece disponível."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Persistenter Mac-Node-Dienst unter App-Profil nicht verfügbar; Laufzeit-Node bleibt verfügbar."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El servicio de nodo Mac persistente no está disponible con un perfil de aplicación; el nodo de tiempo de ejecución sigue disponible."
+          }
+        },
+        "ja-JP": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "アプリプロファイル下では永続的なMacノードサービスを利用できません。ランタイムノードは引き続き利用できます。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "앱 프로필에서는 영구 Mac 노드 서비스를 사용할 수 없습니다. 런타임 노드는 계속 사용할 수 있습니다."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le service de nœud Mac persistant n’est pas disponible sous un profil d’application ; le nœud d’exécution reste disponible."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ऐप प्रोफ़ाइल के अंतर्गत स्थायी Mac नोड सेवा उपलब्ध नहीं है; रनटाइम नोड उपलब्ध रहता है।"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خدمة عقدة Mac الدائمة غير متاحة ضمن ملف تعريف التطبيق؛ تظل عقدة وقت التشغيل متاحة."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Servizio nodo Mac persistente non disponibile con il profilo app; il nodo runtime resta disponibile."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalıcı Mac düğüm hizmeti uygulama profili altında kullanılamaz; çalışma zamanı düğümü kullanılabilir kalır."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Постійна служба вузла Mac недоступна за профілю програми; вузол середовища виконання залишається доступним."
+          }
+        },
+        "id": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Layanan node Mac persisten tidak tersedia di bawah profil aplikasi; node runtime tetap tersedia."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trwała usługa węzła Mac jest niedostępna w ramach profilu aplikacji; węzeł uruchomieniowy pozostaje dostępny."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "บริการโหนด Mac แบบถาวรไม่พร้อมใช้งานภายใต้โปรไฟล์แอป; โหนดรันไทม์ยังคงพร้อมใช้งาน"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dịch vụ node Mac liên tục không khả dụng dưới hồ sơ ứng dụng; node thời gian chạy vẫn khả dụng."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Persistente Mac-nodeservice niet beschikbaar onder app-profiel; runtime-node blijft beschikbaar."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سرویس دائمی نود Mac تحت پروفایل برنامه در دسترس نیست؛ نود زمان اجرا همچنان در دسترس می‌ماند."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Постоянная служба узла Mac недоступна под профилем приложения; узел среды выполнения остаётся доступным."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beständig Mac-nodtjänst är inte tillgänglig under appprofil; körningsnoden förblir tillgänglig."
+          }
+        }
+      }
+    },
     "Photo Library": {
       "localizations": {
         "en": {
@@ -98325,142 +98733,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pino-logg"
-          }
-        }
-      }
-    },
-    "Plain": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plain"
-          }
-        },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "普通"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "純文字"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Simples"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Einfach"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Simple"
-          }
-        },
-        "ja-JP": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Plain"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "일반"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Simple"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "सादा"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "عادي"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Semplice"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Düz"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Звичайний"
-          }
-        },
-        "id": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Polos"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zwykły"
-          }
-        },
-        "th": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ธรรมดา"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Đơn giản"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Effen"
-          }
-        },
-        "fa": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ساده"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Обычный"
-          }
-        },
-        "sv": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enkel"
           }
         }
       }
@@ -130421,142 +130693,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ljud"
-          }
-        }
-      }
-    },
-    "Sparkles": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sparkles"
-          }
-        },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "闪光"
-          }
-        },
-        "zh-TW": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "閃爍"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Brilhos"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Funkeln"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Destellos"
-          }
-        },
-        "ja-JP": {
-          "stringUnit": {
-            "state": "new",
-            "value": "Sparkles"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "반짝임"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Étincelles"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "चमक"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "بريق"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Scintille"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parıltılar"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Блискітки"
-          }
-        },
-        "id": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kilauan"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Iskierki"
-          }
-        },
-        "th": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ประกาย"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lấp lánh"
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sprankelingen"
-          }
-        },
-        "fa": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "درخشش‌ها"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Искры"
-          }
-        },
-        "sv": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gnistor"
           }
         }
       }

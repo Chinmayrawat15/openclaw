@@ -13,6 +13,7 @@ import { listSlackAccountIds } from "./accounts.js";
 import { getSlackApprovalApprovers, isSlackApprovalAuthorizedSender } from "./approval-auth.js";
 import {
   hasSlackPluginApprovers,
+  isSlackApprovalTransportEnabled,
   isSlackAnyNativeApprovalClientEnabled,
   normalizeSlackForwardTarget,
   normalizeSlackOriginTarget,
@@ -141,6 +142,7 @@ const baseSlackApprovalCapability = createApproverRestrictedNativeApprovalCapabi
   isPluginAuthorizedSender: ({ cfg, accountId, senderId }) =>
     isSlackApprovalAuthorizedSender({ cfg, accountId, senderId }),
   isNativeDeliveryEnabled: ({ cfg, accountId }) =>
+    isSlackApprovalTransportEnabled({ cfg, accountId }) &&
     isSlackExecApprovalClientEnabled({ cfg, accountId }),
   resolveNativeDeliveryMode: ({ cfg, accountId }) =>
     resolveSlackExecApprovalTarget({ cfg, accountId }),

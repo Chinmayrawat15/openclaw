@@ -4,6 +4,7 @@ import type { AddressInfo } from "node:net";
 import type { OpenKeyedStoreOptions } from "openclaw/plugin-sdk/plugin-state-runtime";
 import { createPluginStateSyncKeyedStoreForTests } from "openclaw/plugin-sdk/plugin-state-test-runtime";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { getSlackInstallationKind } from "../installation-identity-state.js";
 import {
   disposeSlackTestRuntime,
   flush,
@@ -305,7 +306,10 @@ describe("auth.test boot call", () => {
     });
 
     const monitor = startSlackMonitor(monitorSlackProvider);
+    await vi.waitFor(() => expect(getSlackTestState().appStartMock).toHaveBeenCalledTimes(1));
+    expect(getSlackInstallationKind("default")).toBe("workspace");
     await expect(stopSlackMonitor(monitor)).resolves.toBeUndefined();
+    expect(getSlackInstallationKind("default")).toBeUndefined();
   });
 
   it("starts an org-wide Socket Mode account when auth.test omits app_id", async () => {
@@ -325,7 +329,10 @@ describe("auth.test boot call", () => {
     const monitor = startSlackMonitor(monitorSlackProvider, {
       appToken: "xapp-1-A1-opaque",
     });
+    await vi.waitFor(() => expect(getSlackTestState().appStartMock).toHaveBeenCalledTimes(1));
+    expect(getSlackInstallationKind("default")).toBe("enterprise");
     await expect(stopSlackMonitor(monitor)).resolves.toBeUndefined();
+    expect(getSlackInstallationKind("default")).toBeUndefined();
   });
 
   it("rejects enterprise startup with the default pairing DM policy", async () => {
@@ -715,6 +722,8 @@ describe("connected identity health", () => {
     const setStatus = vi.fn();
 
     const monitor = startSlackMonitor(monitorSlackProvider, { setStatus });
+    await vi.waitFor(() => expect(getSlackClient().auth.test).toHaveBeenCalledTimes(2));
+    expect(getSlackInstallationKind("default")).toBe("workspace");
     await stopSlackMonitor(monitor);
 
     expect(setStatus).toHaveBeenCalledWith({
@@ -725,7 +734,7 @@ describe("connected identity health", () => {
       lifecycle: "ready",
       lastError: null,
     });
-    expect(getSlackClient().auth.test).toHaveBeenCalledTimes(2);
+    expect(getSlackInstallationKind("default")).toBeUndefined();
   });
 
   it("promotes recovered Enterprise identity before dispatching its first event", async () => {
@@ -756,6 +765,7 @@ describe("connected identity health", () => {
     const handler = await getSlackHandlerOrThrow("message");
 
     await vi.waitFor(() => expect(client.auth.test).toHaveBeenCalledTimes(2));
+    expect(getSlackInstallationKind("default")).toBe("enterprise");
     expect(setStatus).toHaveBeenCalledWith({
       running: true,
       connected: true,

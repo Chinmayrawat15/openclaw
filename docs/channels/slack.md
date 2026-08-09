@@ -242,10 +242,10 @@ bot identity for loop prevention.
 Enterprise support accepts direct Socket Mode or HTTP `message` and
 `app_mention` events plus workspace-qualified outbound messages. Relay mode,
 slash commands, interactions, App Home, reaction event listeners, pins,
-Slack-native approval UI, and configured static bindings remain unavailable
-for an enterprise account. Web and terminal approval flows and runtime
-current-conversation bindings remain available. Slack action tools use the same
-workspace-qualified destinations for reads and writes. Outbound acknowledgment,
+Slack-native approval UI, configured static bindings, and runtime
+current-conversation bindings remain unavailable for an enterprise account.
+Web and terminal approval flows remain available. Slack action tools use the
+same workspace-qualified destinations for reads and writes. Outbound acknowledgment,
 typing, and status reactions are supported and require `reactions:write`;
 inbound reaction notifications remain unavailable.
 

@@ -13,6 +13,10 @@ import {
 } from "openclaw/plugin-sdk/session-binding-runtime";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { slackPlugin } from "./channel.js";
+import {
+  registerSlackInstallationState,
+  type SlackInstallationStateRegistration,
+} from "./installation-identity-state.js";
 import type { OpenClawConfig } from "./runtime-api.js";
 import { setSlackRuntime } from "./runtime.js";
 
@@ -26,6 +30,7 @@ describe("Slack runtime conversation bindings", () => {
   let cfg: OpenClawConfig;
   let previousStateDir: string | undefined;
   let testStateDir = "";
+  let installationState: SlackInstallationStateRegistration;
 
   beforeEach(async () => {
     previousStateDir = process.env.OPENCLAW_STATE_DIR;
@@ -36,10 +41,12 @@ describe("Slack runtime conversation bindings", () => {
     setActivePluginRegistry(
       createTestRegistry([{ pluginId: "slack", source: "test", plugin: slackPlugin }]),
     );
+    installationState = registerSlackInstallationState("default", "workspace");
     sessionBindingTesting.resetSessionBindingAdaptersForTests();
   });
 
   afterEach(async () => {
+    installationState.release();
     sessionBindingTesting.resetSessionBindingAdaptersForTests();
     closeOpenClawStateDatabaseForTest();
     setSlackRuntime(null as never);
@@ -77,5 +84,45 @@ describe("Slack runtime conversation bindings", () => {
     await expect(
       service.unbind({ bindingId: reassigned.bindingId, reason: "workspace cleanup" }),
     ).resolves.toEqual([reassigned]);
+  });
+
+  it("does not advertise, select, or mutate bindings for a detected org install", async () => {
+    const service = getSessionBindingService();
+    const existing = await service.bind({
+      targetSessionKey: "agent:main:workspace",
+      targetKind: "session",
+      conversation: CONVERSATION,
+    });
+    const originalActivityAt = existing.metadata?.lastActivityAt;
+
+    installationState.update("enterprise");
+
+    expect(service.getCapabilities({ channel: "slack", accountId: "default" })).toEqual({
+      adapterAvailable: false,
+      bindSupported: false,
+      unbindSupported: false,
+      placements: [],
+    });
+    expect(service.resolveByConversation(CONVERSATION)).toBeNull();
+    expect(service.listBySession(existing.targetSessionKey)).toEqual([]);
+
+    service.touch(existing.bindingId, 9999);
+    await expect(
+      service.bind({
+        targetSessionKey: "agent:main:enterprise",
+        targetKind: "session",
+        conversation: CONVERSATION,
+      }),
+    ).rejects.toMatchObject({ code: "BINDING_ADAPTER_UNAVAILABLE" });
+    await expect(
+      service.unbind({ bindingId: existing.bindingId, reason: "enterprise cleanup" }),
+    ).resolves.toEqual([]);
+
+    installationState.update("workspace");
+    expect(service.resolveByConversation(CONVERSATION)).toMatchObject({
+      bindingId: existing.bindingId,
+      targetSessionKey: existing.targetSessionKey,
+      metadata: { lastActivityAt: originalActivityAt },
+    });
   });
 });

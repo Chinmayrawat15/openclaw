@@ -59,6 +59,7 @@ import { getSlackWriteClient } from "./client.js";
 import { formatSlackError } from "./errors.js";
 import { shouldSuppressLocalSlackExecApprovalPrompt } from "./exec-approvals.js";
 import { resolveSlackGroupRequireMention, resolveSlackGroupToolPolicy } from "./group-policy.js";
+import { isSlackWorkspaceInstallation } from "./installation-identity-state.js";
 import { SLACK_TEXT_LIMIT } from "./limits.js";
 import { SLACK_PRESENTATION_CAPABILITIES } from "./presentation.js";
 import type { SlackProbe } from "./probe.js";
@@ -657,6 +658,10 @@ export const slackPlugin: ChannelPlugin<ResolvedSlackAccount, SlackProbe> = crea
           conversationId,
           parentConversationId,
         }),
+    },
+    conversationBindings: {
+      isCurrentConversationBindingSupported: ({ accountId }) =>
+        isSlackWorkspaceInstallation(accountId),
     },
     messaging: {
       targetPrefixes: ["slack"],

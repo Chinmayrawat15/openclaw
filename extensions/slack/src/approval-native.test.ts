@@ -8,8 +8,12 @@ import {
   upsertSessionEntry,
 } from "openclaw/plugin-sdk/session-store-runtime";
 import { closeOpenClawAgentDatabasesForTest } from "openclaw/plugin-sdk/sqlite-runtime-testing";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { slackApprovalCapability } from "./approval-native.js";
+import {
+  registerSlackInstallationState,
+  type SlackInstallationStateRegistration,
+} from "./installation-identity-state.js";
 
 function buildConfig(
   overrides?: Partial<NonNullable<NonNullable<OpenClawConfig["channels"]>["slack"]>>,
@@ -31,8 +35,20 @@ function buildConfig(
 }
 
 const tempDirs: string[] = [];
+let installationStates: SlackInstallationStateRegistration[] = [];
+
+beforeEach(() => {
+  installationStates = [
+    registerSlackInstallationState("default", "workspace"),
+    registerSlackInstallationState("work", "workspace"),
+  ];
+});
 
 afterEach(() => {
+  for (const installationState of installationStates) {
+    installationState.release();
+  }
+  installationStates = [];
   closeOpenClawAgentDatabasesForTest();
   for (const dir of tempDirs.splice(0)) {
     fs.rmSync(dir, { recursive: true, force: true });
@@ -173,6 +189,59 @@ describe("slack native approval adapter", () => {
       supportsApproverDmSurface: true,
       notifyOriginWhenDmOnly: true,
     });
+  });
+
+  it("disables every native approval path for a detected org install", async () => {
+    const cfg = buildConfig();
+    const request = createExecApprovalRequest();
+    installationStates[0]?.update("enterprise");
+
+    expect(
+      slackApprovalCapability.nativeRuntime?.availability.isConfigured({
+        cfg,
+        accountId: "default",
+      }),
+    ).toBe(false);
+    expect(
+      slackApprovalCapability.nativeRuntime?.availability.shouldHandle({
+        cfg,
+        accountId: "default",
+        approvalKind: "exec",
+        request,
+      }),
+    ).toBe(false);
+    expect(
+      slackApprovalCapability.native?.describeDeliveryCapabilities({
+        cfg,
+        accountId: "default",
+        approvalKind: "exec",
+        request,
+      }).enabled,
+    ).toBe(false);
+    await expect(
+      slackApprovalCapability.native?.resolveApproverDmTargets?.({
+        cfg,
+        accountId: "default",
+        approvalKind: "exec",
+        request,
+      }),
+    ).resolves.toEqual([]);
+
+    installationStates[0]?.update("workspace");
+    expect(
+      slackApprovalCapability.nativeRuntime?.availability.isConfigured({
+        cfg,
+        accountId: "default",
+      }),
+    ).toBe(true);
+    expect(
+      slackApprovalCapability.native?.describeDeliveryCapabilities({
+        cfg,
+        accountId: "default",
+        approvalKind: "exec",
+        request,
+      }).enabled,
+    ).toBe(true);
   });
 
   it("describes the correct Slack exec-approval setup path", () => {

@@ -41,6 +41,7 @@ import {
 } from "../client-options.js";
 import { createSlackStartupAuthClient } from "../client.js";
 import { normalizeSlackWebhookPath, registerSlackHttpHandler } from "../http/index.js";
+import { registerSlackInstallationState } from "../installation-identity-state.js";
 import { SLACK_TEXT_LIMIT } from "../limits.js";
 import { resolveSlackChannelAllowlist } from "../resolve-channels.js";
 import { resolveSlackUserAllowlist, type SlackUserResolution } from "../resolve-users.js";
@@ -463,6 +464,7 @@ export async function monitorSlackProvider(opts: MonitorSlackOpts = {}) {
           isEnterpriseInstall: identity.isEnterpriseInstall,
         });
       if (adopted && contextInstallationIdentity) {
+        installationState.update(contextInstallationIdentity.kind);
         await installSlackRuntimeForIdentity(contextInstallationIdentity);
       }
       if (recovered || adopted) {
@@ -912,6 +914,7 @@ export async function monitorSlackProvider(opts: MonitorSlackOpts = {}) {
         if (!adopted) {
           return false;
         }
+        installationState.update(recoveredInstallationIdentity.kind);
         await installSlackRuntimeForIdentity(recoveredInstallationIdentity);
         return true;
       } catch (err) {
@@ -932,16 +935,19 @@ export async function monitorSlackProvider(opts: MonitorSlackOpts = {}) {
     }
   }
 
-  await installSlackRuntimeForIdentity(installationIdentity);
-
   const stopOnAbort = () => {
     if (opts.abortSignal?.aborted && slackMode === "socket") {
       void gracefulStop();
     }
   };
   opts.abortSignal?.addEventListener("abort", stopOnAbort, { once: true });
+  const installationState = registerSlackInstallationState(
+    account.accountId,
+    installationIdentity.kind,
+  );
 
   try {
+    await installSlackRuntimeForIdentity(installationIdentity);
     durableIngress.start();
     runtimeStarted = true;
     startPresenceMonitor();
@@ -1079,6 +1085,7 @@ export async function monitorSlackProvider(opts: MonitorSlackOpts = {}) {
       }
     }
   } finally {
+    installationState.release();
     runtimeStarted = false;
     presenceRequestAbort?.abort();
     await presenceMonitor?.stop();

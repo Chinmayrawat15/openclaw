@@ -34,6 +34,7 @@ import {
   getSlackExecApprovalApprovers,
   isSlackExecApprovalClientEnabled,
 } from "./exec-approvals.js";
+import { isSlackWorkspaceInstallation } from "./installation-identity-state.js";
 import {
   canonicalizeSlackApiTargetId,
   formatSlackTarget,
@@ -70,11 +71,12 @@ function resolveSlackApprovalKind(request: SlackNativeApprovalRequest): SlackApp
   return isExec ? "exec" : "plugin";
 }
 
-function isSlackApprovalTransportEnabled(params: {
+export function isSlackApprovalTransportEnabled(params: {
   cfg: OpenClawConfig;
   accountId?: string | null;
 }): boolean {
-  return isSlackPluginAccountConfigured(resolveSlackAccount(params));
+  const account = resolveSlackAccount(params);
+  return isSlackWorkspaceInstallation(account.accountId) && isSlackPluginAccountConfigured(account);
 }
 
 function resolveSlackNativeApprovalConfig(params: {
@@ -394,6 +396,9 @@ export function isSlackAnyNativeApprovalClientEnabled(params: {
   cfg: OpenClawConfig;
   accountId?: string | null;
 }): boolean {
+  if (!isSlackApprovalTransportEnabled(params)) {
+    return false;
+  }
   return (
     isSlackNativeApprovalClientEnabled({
       ...params,
@@ -412,6 +417,9 @@ export function shouldHandleSlackNativeApprovalRequest(params: {
   approvalKind?: SlackApprovalKind;
   request: SlackNativeApprovalRequest;
 }): boolean {
+  if (!isSlackApprovalTransportEnabled(params)) {
+    return false;
+  }
   const approvalKind = params.approvalKind ?? resolveSlackApprovalKind(params.request);
   if (approvalKind === "plugin") {
     return (

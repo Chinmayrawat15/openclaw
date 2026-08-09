@@ -481,8 +481,8 @@ WhatsApp runs through the gateway's web channel (Baileys Web). It starts automat
   Mode or HTTP `message` and `app_mention` events, workspace-qualified actions,
   deferred delivery, and proactive sends are supported. Relay, commands,
   interactions, App Home, non-message event listeners, configured static bindings,
-  and Slack-native approval UI remain unavailable. Web and terminal approval
-  flows and runtime current-conversation bindings remain available. See
+  runtime current-conversation bindings, and Slack-native approval UI remain
+  unavailable. Web and terminal approval flows remain available. See
   [Enterprise Grid org-wide installs](/channels/slack#enterprise-grid-org-wide-installs)
   for the least-privilege manifest, setup workflow, and complete restrictions.
 - The retired `enterpriseOrgInstall` key is removed by `openclaw doctor --fix`

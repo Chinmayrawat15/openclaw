@@ -1,6 +1,6 @@
 // Slack tests cover exec approvals plugin behavior.
 import type { OpenClawConfig } from "openclaw/plugin-sdk/config-contracts";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { slackApprovalCapability } from "./approval-native.js";
 import {
   getSlackExecApprovalApprovers,
@@ -10,6 +10,26 @@ import {
   resolveSlackExecApprovalTarget,
   shouldSuppressLocalSlackExecApprovalPrompt,
 } from "./exec-approvals.js";
+import {
+  registerSlackInstallationState,
+  type SlackInstallationStateRegistration,
+} from "./installation-identity-state.js";
+
+let installationStates: SlackInstallationStateRegistration[] = [];
+
+beforeEach(() => {
+  installationStates = [
+    registerSlackInstallationState("default", "workspace"),
+    registerSlackInstallationState("work", "workspace"),
+  ];
+});
+
+afterEach(() => {
+  for (const installationState of installationStates) {
+    installationState.release();
+  }
+  installationStates = [];
+});
 
 function buildConfig(
   execApprovals?: NonNullable<NonNullable<OpenClawConfig["channels"]>["slack"]>["execApprovals"],

@@ -332,13 +332,29 @@ describe("runReplyAgent runtime config", () => {
     expect(memoryCall.runtimePolicySessionKey).toBe(runtimePolicySessionKey);
   });
 
-  it("continues the main reply when memory flush reports visible maintenance errors", async () => {
+  it.each([
+    {
+      failure: "restricted write",
+      message:
+        "⚠️ write failed: Memory flush writes are restricted to memory/2023-11-14.md; use that path only.",
+    },
+    {
+      failure: "target preparation",
+      message: "⚠️ ENOSPC: no space left on device, mkdir",
+    },
+    {
+      failure: "baseline read",
+      message: "⚠️ EACCES: permission denied, read",
+    },
+  ])("continues the main reply after a memory-flush $failure failure", async ({ message }) => {
     const { replyParams } = createDirectRuntimeReplyParams({
       shouldFollowup: false,
       isActive: false,
     });
     const onBlockReply = vi.fn();
+    const replyOperation = createReplyOperation();
     replyParams.opts = { sourceReplyDeliveryMode: "message_tool_only", onBlockReply };
+    replyParams.replyOperation = replyOperation;
     resolveQueuedReplyExecutionConfigMock.mockResolvedValue({
       ...freshCfg,
       agents: { defaults: { compaction: { notifyUser: true } } },
@@ -346,14 +362,11 @@ describe("runReplyAgent runtime config", () => {
     runPreflightCompactionIfNeededMock.mockResolvedValue(undefined);
     runMemoryFlushIfNeededMock.mockImplementation(
       async (params: {
+        replyOperation: ReplyOperation;
         onVisibleErrorPayloads?: (payloads: Array<{ text?: string; isError?: boolean }>) => void;
       }) => {
-        params.onVisibleErrorPayloads?.([
-          {
-            text: "⚠️ write failed: Memory flush writes are restricted to memory/2023-11-14.md; use that path only.",
-            isError: true,
-          },
-        ]);
+        params.replyOperation.setPhase("memory_flushing");
+        params.onVisibleErrorPayloads?.([{ text: message, isError: true }]);
         return { sessionEntry: undefined, outcome: "failed" };
       },
     );
@@ -363,6 +376,8 @@ describe("runReplyAgent runtime config", () => {
     expect(result).toEqual({ text: "main reply" });
     expect(onBlockReply).not.toHaveBeenCalled();
     expect(executeAgentTurnMock).toHaveBeenCalledOnce();
+    expect(replyOperation.setPhase).toHaveBeenNthCalledWith(1, "memory_flushing");
+    expect(replyOperation.setPhase).toHaveBeenNthCalledWith(2, "running");
   });
 
   it("rotates, rebinds, and optionally notifies when memory flush is exhausted", async () => {

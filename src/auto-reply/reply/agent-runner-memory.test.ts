@@ -1042,6 +1042,106 @@ describe("runMemoryFlushIfNeeded", () => {
     );
   });
 
+  it.each([
+    {
+      stage: "target preparation",
+      code: "ENOSPC",
+      message: "ENOSPC: no space left on device, mkdir",
+    },
+    {
+      stage: "baseline read",
+      code: "EACCES",
+      message: "EACCES: permission denied, read",
+    },
+  ])("records $code during memory-flush $stage and retries the next turn", async (failure) => {
+    const storePath = path.join(rootDir, "sessions.json");
+    const sessionEntry: SessionEntry = {
+      sessionId: "session",
+      updatedAt: Date.now(),
+      totalTokens: 80_000,
+      totalTokensFresh: true,
+      totalTokensVersion: 1,
+      compactionCount: 1,
+    };
+    const sessionStore = { main: sessionEntry };
+    await writeTestSessionStore(storePath, "main", sessionEntry);
+    const error = Object.assign(new Error(failure.message), { code: failure.code });
+    const readFileSpy =
+      failure.stage === "baseline read"
+        ? vi.spyOn(fsCore.promises, "readFile").mockRejectedValueOnce(error)
+        : undefined;
+    if (failure.stage === "target preparation") {
+      ensureMemoryFlushTargetFileMock.mockRejectedValueOnce(error);
+    }
+    const replyOperation = createReplyOperation();
+    const visibleErrorPayloads: ReplyPayload[] = [];
+    const params = {
+      cfg: { agents: { defaults: { compaction: { memoryFlush: {} } } } },
+      followupRun: createTestFollowupRun({ workspaceDir: rootDir }),
+      sessionCtx: { Provider: "whatsapp" } as unknown as TemplateContext,
+      defaultModel: "anthropic/claude-opus-4-7",
+      agentCfgContextTokens: 100_000,
+      resolvedVerboseLevel: "off" as const,
+      sessionEntry,
+      sessionStore,
+      sessionKey: "main",
+      storePath,
+      isHeartbeat: false,
+      replyOperation,
+      onVisibleErrorPayloads: (payloads: ReplyPayload[]) => {
+        visibleErrorPayloads.push(...payloads);
+      },
+    };
+
+    try {
+      const result = await runMemoryFlushIfNeeded(params);
+
+      expect(result).toMatchObject({
+        outcome: "failed",
+        sessionEntry: {
+          sessionId: "session",
+          compactionCount: 1,
+          memoryFlush: { kind: "failed", failureCount: 1 },
+        },
+      });
+      expect(sessionStore.main.memoryFlush).toEqual({ kind: "failed", failureCount: 1 });
+      expect(loadMainSessionEntry(storePath).memoryFlush).toEqual({
+        kind: "failed",
+        failureCount: 1,
+      });
+      expect(replyOperation.setPhase).toHaveBeenCalledWith("memory_flushing");
+      expect(runEmbeddedAgentEntryMock).not.toHaveBeenCalled();
+      expect(incrementCompactionCountMock).not.toHaveBeenCalled();
+      expect(visibleErrorPayloads).toEqual([{ text: `⚠️ ${failure.message}`, isError: true }]);
+      expect(emitAgentEventMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          stream: "lifecycle",
+          data: expect.objectContaining({
+            phase: "memory_flush_failed",
+            attempt: 1,
+            maxAttempts: TEST_MAX_FLUSH_FAILURES,
+            error: failure.message,
+          }),
+        }),
+      );
+
+      const retry = await runMemoryFlushIfNeeded({
+        ...params,
+        sessionEntry: result.sessionEntry,
+        replyOperation: createReplyOperation(),
+      });
+
+      expect(retry.outcome).toBe("completed");
+      expect(runEmbeddedAgentEntryMock).toHaveBeenCalledOnce();
+      expect(loadMainSessionEntry(storePath).memoryFlush).toEqual({
+        kind: "succeeded",
+        compactionCount: 1,
+      });
+    } finally {
+      readFileSpy?.mockRestore();
+    }
+  });
+
   it("does not track failure on abort error", async () => {
     const storePath = path.join(rootDir, "sessions.json");
     const sessionEntry: SessionEntry = {

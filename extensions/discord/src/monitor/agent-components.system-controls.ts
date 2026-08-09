@@ -98,7 +98,8 @@ async function runAgentSystemControlInteraction(params: AgentSystemControlParams
 
   enqueueSystemEvent(eventText, {
     sessionKey: route.sessionKey,
-    contextKey: `${params.contextKeyPrefix}:${channelId}:${componentId}:${userId}`,
+    // An interaction ID identifies one click, so repeat clicks survive while gateway replays dedupe.
+    contextKey: `${params.contextKeyPrefix}:${channelId}:${componentId}:${userId}:${params.interaction.rawData.id}`,
   });
 
   await ackComponentInteraction({

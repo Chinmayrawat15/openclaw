@@ -3,6 +3,10 @@ import { ChannelType } from "discord-api-types/v10";
 import { expectPairingReplyText } from "openclaw/plugin-sdk/channel-test-helpers";
 import type { DiscordAccountConfig, OpenClawConfig } from "openclaw/plugin-sdk/config-contracts";
 import { buildAgentSessionKey } from "openclaw/plugin-sdk/routing";
+import {
+  enqueueSystemEvent,
+  peekSystemEventEntries,
+} from "openclaw/plugin-sdk/system-event-runtime";
 import { peekSystemEvents, resetSystemEventsForTest } from "openclaw/plugin-sdk/test-fixtures";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
@@ -41,7 +45,7 @@ describe("agent components", () => {
     const reply = vi.fn().mockResolvedValue(undefined);
     const defer = vi.fn().mockResolvedValue(undefined);
     const interaction = {
-      rawData: { channel_id: "dm-channel" },
+      rawData: { id: "interaction-1", channel_id: "dm-channel" },
       user: { id: "123456789", username: "Alice", discriminator: "1234" },
       defer,
       reply,
@@ -93,7 +97,7 @@ describe("agent components", () => {
     const reply = vi.fn().mockResolvedValue(undefined);
     const defer = vi.fn().mockResolvedValue(undefined);
     const interaction = {
-      rawData: { channel_id: "group-dm-channel" },
+      rawData: { id: "interaction-1", channel_id: "group-dm-channel" },
       channel: {
         id: "group-dm-channel",
         type: ChannelType.GroupDM,
@@ -139,7 +143,7 @@ describe("agent components", () => {
       "[Discord component: hello clicked by Alice#1234 (123456789)]",
       {
         sessionKey: defaultDmSessionKey,
-        contextKey: "discord:agent-button:dm-channel:hello:123456789",
+        contextKey: "discord:agent-button:dm-channel:hello:123456789:interaction-1",
       },
     );
     if (params.expectPairingStoreRead) {
@@ -266,7 +270,7 @@ describe("agent components", () => {
       "[Discord component: hello clicked by Alice#1234 (123456789)]",
       {
         sessionKey: defaultGroupDmSessionKey,
-        contextKey: "discord:agent-button:group-dm-channel:hello:123456789",
+        contextKey: "discord:agent-button:group-dm-channel:hello:123456789:interaction-1",
       },
     );
     expect(peekSystemEvents(defaultDmSessionKey)).toStrictEqual([]);
@@ -329,7 +333,7 @@ describe("agent components", () => {
       "[Discord select menu: hello interacted by Alice#1234 (123456789) (selected: alpha)]",
       {
         sessionKey: defaultDmSessionKey,
-        contextKey: "discord:agent-select:dm-channel:hello:123456789",
+        contextKey: "discord:agent-select:dm-channel:hello:123456789:interaction-1",
       },
     );
     expect(readAllowFromStoreMock).not.toHaveBeenCalled();
@@ -352,7 +356,7 @@ describe("agent components", () => {
       "[Discord component: hello_cid clicked by Alice#1234 (123456789)]",
       {
         sessionKey: defaultDmSessionKey,
-        contextKey: "discord:agent-button:dm-channel:hello_cid:123456789",
+        contextKey: "discord:agent-button:dm-channel:hello_cid:123456789:interaction-1",
       },
     );
     expect(readAllowFromStoreMock).not.toHaveBeenCalled();
@@ -375,9 +379,67 @@ describe("agent components", () => {
       "[Discord component: hello%2G clicked by Alice#1234 (123456789)]",
       {
         sessionKey: defaultDmSessionKey,
-        contextKey: "discord:agent-button:dm-channel:hello%2G:123456789",
+        contextKey: "discord:agent-button:dm-channel:hello%2G:123456789:interaction-1",
       },
     );
     expect(readAllowFromStoreMock).not.toHaveBeenCalled();
   });
+
+  it.each(["button", "select"] as const)(
+    "queues distinct %s interactions while deduplicating replayed occurrences",
+    async (kind) => {
+      const context = {
+        cfg: createCfg(),
+        accountId: "default",
+        dmPolicy: "allowlist" as const,
+        allowFrom: ["123456789"],
+      };
+      const control =
+        kind === "button" ? createAgentComponentButton(context) : createAgentSelectMenu(context);
+      const first = kind === "button" ? createDmButtonInteraction() : createDmSelectInteraction();
+      const second = kind === "button" ? createDmButtonInteraction() : createDmSelectInteraction();
+      const replay = kind === "button" ? createDmButtonInteraction() : createDmSelectInteraction();
+      second.interaction.rawData.id = "interaction-2";
+
+      await enqueueSystemEventMock.withImplementation(
+        (...args) => enqueueSystemEvent(...(args as Parameters<typeof enqueueSystemEvent>)),
+        async () => {
+          await control.run(first.interaction, { componentId: "hello" } as ComponentData);
+          enqueueSystemEvent("An unrelated event occurred", {
+            sessionKey: defaultDmSessionKey,
+            contextKey: "discord:test:intervening",
+          });
+          await control.run(second.interaction, { componentId: "hello" } as ComponentData);
+          await control.run(replay.interaction, { componentId: "hello" } as ComponentData);
+
+          expect(enqueueSystemEventMock.mock.results.map(({ value }) => value)).toEqual([
+            true,
+            true,
+            false,
+          ]);
+          const eventText =
+            kind === "button"
+              ? "[Discord component: hello clicked by Alice#1234 (123456789)]"
+              : "[Discord select menu: hello interacted by Alice#1234 (123456789) (selected: alpha)]";
+          expect(peekSystemEventEntries(defaultDmSessionKey)).toMatchObject([
+            {
+              text: eventText,
+              contextKey: `discord:agent-${kind}:dm-channel:hello:123456789:interaction-1`,
+            },
+            {
+              text: "An unrelated event occurred",
+              contextKey: "discord:test:intervening",
+            },
+            {
+              text: eventText,
+              contextKey: `discord:agent-${kind}:dm-channel:hello:123456789:interaction-2`,
+            },
+          ]);
+          for (const { reply } of [first, second, replay]) {
+            expect(reply).toHaveBeenCalledWith({ content: "✓", ephemeral: true });
+          }
+        },
+      );
+    },
+  );
 });

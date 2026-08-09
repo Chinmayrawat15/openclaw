@@ -57,13 +57,17 @@ export async function callSubagentGateway(
     // Direct dispatch avoids self-connecting over WS while the same event loop is busy.
     // Agent launches are host-owned even when the parent request came from CLI/HTTP.
     // Reusing that external identity makes collector preflight treat the launch as spoofed.
-    const forceSyntheticClient = request.method === "agent" || scopes != null;
+    // The subagent registry records the canonical `subagent` task row for a
+    // child launch, so the gateway must not also open a `cli` row for that run.
+    const isChildRunLaunch = request.method === "agent";
+    const forceSyntheticClient = isChildRunLaunch || scopes != null;
     return await deps.dispatchGatewayMethodInProcess(
       request.method,
       request.params as Record<string, unknown>,
       {
         expectFinal: request.expectFinal,
         ...(allowModelOverride ? { allowSyntheticModelOverride: true } : {}),
+        ...(isChildRunLaunch ? { agentRunTracking: "native_subagent" as const } : {}),
         ...(forceSyntheticClient ? { forceSyntheticClient: true } : {}),
         ...(typeof request.timeoutMs === "number" ? { timeoutMs: request.timeoutMs } : {}),
         ...(scopes != null ? { syntheticScopes: scopes } : {}),

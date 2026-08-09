@@ -36,6 +36,7 @@ import {
 } from "./server-in-process-dispatch.js";
 import type { TrustedSessionCreation } from "./server-methods/session-creation-provenance.js";
 import type {
+  GatewayAgentRunTaskOwner,
   GatewayRequestContext,
   GatewayRequestHandler,
   GatewayRequestOptions,
@@ -218,7 +219,7 @@ function resolveRuntimeNodeInvokeSyntheticScopes(params: {
 type DispatchGatewayMethodInProcessOptions = {
   allowSyntheticModelOverride?: boolean;
   allowSyntheticCronRunContinuation?: boolean;
-  agentRunTracking?: "plugin_subagent";
+  agentRunTracking?: GatewayAgentRunTaskOwner;
   disableSyntheticClient?: boolean;
   expectFinal?: boolean;
   forceSyntheticClient?: boolean;

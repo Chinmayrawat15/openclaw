@@ -97,8 +97,15 @@ export function resolveGatewayAgentTaskTrackingMode(params: {
   if (!params.sessionKey?.trim() || params.inputProvenance?.kind === "inter_session") {
     return "none";
   }
-  if (params.client?.internal?.agentRunTracking === "plugin_subagent") {
+  const runTaskOwner = params.client?.internal?.agentRunTracking;
+  if (runTaskOwner === "plugin_subagent") {
     return "plugin_subagent";
+  }
+  // The native spawn control plane registers the canonical `subagent` row for
+  // this same runId once the gateway returns, so tracking here would show one
+  // run twice. The marker rides an internal synthetic client only.
+  if (runTaskOwner === "native_subagent") {
+    return "none";
   }
   // A confirmed ACP manual-spawn child turn already owns its requester-visible
   // `acp` task row from the spawn control plane (src/agents/acp-spawn.ts). The

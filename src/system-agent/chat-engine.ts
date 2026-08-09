@@ -911,6 +911,7 @@ export class SystemAgentChatEngine {
       }
       if (
         reply.wizardInputPending !== true &&
+        reply.wizardSettling !== true &&
         bridge.dismissedQrStepId === stepId &&
         !bridge.qrExpired
       ) {
@@ -1996,7 +1997,7 @@ export class SystemAgentChatEngine {
       const text = await this.pumpWizardBridge();
       this.assertActive();
       const reply = this.projectWizardReply({ text, action: "none" });
-      if (reply.wizardInputPending === true) {
+      if (reply.wizardInputPending === true || reply.wizardSettling === true) {
         return;
       }
       const turns: SystemAgentAssistantTurn[] = reply.text

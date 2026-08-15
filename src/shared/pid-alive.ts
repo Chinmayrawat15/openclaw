@@ -8,7 +8,7 @@ const DARWIN_PS_TIMEOUT_MS = 1000;
 // PowerShell attempt and its WMIC fallback must stay short enough that an
 // unhealthy host cannot stall a cron tick. The reader's own 5s default would
 // allow ~10s per claim; 1s matches the gateway lock owner probe.
-const WINDOWS_PS_TIMEOUT_MS = 1000;
+const WINDOWS_LOCK_PROBE_TIMEOUT_MS = 1000;
 
 function isValidPid(pid: number): boolean {
   return Number.isInteger(pid) && pid > 0;
@@ -117,8 +117,16 @@ export function getProcessStartTime(pid: number): number | null {
  * timestamp: Linux reports scheduler ticks, Darwin epoch seconds, and Windows
  * epoch milliseconds. Callers only ever compare it against a value this helper
  * produced on the same host, so the units never need to agree across platforms.
+ *
+ * `windowsProbeTimeoutMs` bounds each Windows attempt (PowerShell, then the
+ * WMIC fallback). It defaults to the lock-owner budget, which suits callers on
+ * a timer path; callers that can afford to wait longer before failing closed
+ * pass their own, and it is ignored on platforms that read identity in-process.
  */
-export function getFileLockProcessStartTime(pid: number): number | null {
+export function getFileLockProcessStartTime(
+  pid: number,
+  windowsProbeTimeoutMs = WINDOWS_LOCK_PROBE_TIMEOUT_MS,
+): number | null {
   if (!isValidPid(pid)) {
     return null;
   }
@@ -126,7 +134,7 @@ export function getFileLockProcessStartTime(pid: number): number | null {
     return getDarwinProcessStartTime(pid);
   }
   if (process.platform === "win32") {
-    return readWindowsProcessStartTimeSync(pid, WINDOWS_PS_TIMEOUT_MS);
+    return readWindowsProcessStartTimeSync(pid, windowsProbeTimeoutMs);
   }
   return getProcessStartTime(pid);
 }

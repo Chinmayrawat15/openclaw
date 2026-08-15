@@ -247,6 +247,17 @@ describe("process start times", () => {
     });
   });
 
+  it("lets a caller widen the Windows probe budget past the lock-owner default", () => {
+    mockReadWindowsProcessStartTime.mockReturnValue(1_752_000_000_123);
+
+    return withMockedPlatform("win32", async () => {
+      // Callers off the timer path (node-worker startup) keep the reader's
+      // original tolerance so a slow probe cannot fail them closed.
+      expect(getFileLockProcessStartTime(42, 5000)).toBe(1_752_000_000_123);
+      expect(mockReadWindowsProcessStartTime).toHaveBeenCalledWith(42, 5000);
+    });
+  });
+
   it("fails conservatively when the Windows file-lock start-time probe finds nothing", () => {
     mockReadWindowsProcessStartTime.mockReturnValue(null);
 

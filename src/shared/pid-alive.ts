@@ -1,8 +1,14 @@
 // PID liveness helpers check whether process ids still refer to active processes.
 import childProcess from "node:child_process";
 import fsSync from "node:fs";
+import { readWindowsProcessStartTimeSync } from "../infra/windows-port-pids.js";
 
 const DARWIN_PS_TIMEOUT_MS = 1000;
+// Lock owners probe this synchronously while claiming a fence, so both the
+// PowerShell attempt and its WMIC fallback must stay short enough that an
+// unhealthy host cannot stall a cron tick. The reader's own 5s default would
+// allow ~10s per claim; 1s matches the gateway lock owner probe.
+const WINDOWS_PS_TIMEOUT_MS = 1000;
 
 function isValidPid(pid: number): boolean {
   return Number.isInteger(pid) && pid > 0;
@@ -104,10 +110,23 @@ export function getProcessStartTime(pid: number): number | null {
   }
 }
 
-/** Read a cross-platform process identity for filesystem lock ownership. */
+/**
+ * Read a cross-platform process identity for filesystem lock ownership.
+ *
+ * The value is an opaque per-platform identity token, not a comparable
+ * timestamp: Linux reports scheduler ticks, Darwin epoch seconds, and Windows
+ * epoch milliseconds. Callers only ever compare it against a value this helper
+ * produced on the same host, so the units never need to agree across platforms.
+ */
 export function getFileLockProcessStartTime(pid: number): number | null {
   if (!isValidPid(pid)) {
     return null;
   }
-  return process.platform === "darwin" ? getDarwinProcessStartTime(pid) : getProcessStartTime(pid);
+  if (process.platform === "darwin") {
+    return getDarwinProcessStartTime(pid);
+  }
+  if (process.platform === "win32") {
+    return readWindowsProcessStartTimeSync(pid, WINDOWS_PS_TIMEOUT_MS);
+  }
+  return getProcessStartTime(pid);
 }

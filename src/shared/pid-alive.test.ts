@@ -10,8 +10,18 @@ import {
   isPidDefinitelyDead,
 } from "./pid-alive.js";
 
+const mockReadWindowsProcessStartTime = vi.hoisted(() =>
+  vi.fn<(pid: number, timeoutMs?: number) => number | null>(() => null),
+);
+
+vi.mock("../infra/windows-port-pids.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../infra/windows-port-pids.js")>()),
+  readWindowsProcessStartTimeSync: mockReadWindowsProcessStartTime,
+}));
+
 afterEach(() => {
   vi.restoreAllMocks();
+  mockReadWindowsProcessStartTime.mockReset();
 });
 
 function mockProcReads(entries: Record<string, string>) {
@@ -223,8 +233,30 @@ describe("process start times", () => {
     });
   });
 
-  it("returns null on unsupported platforms", () => {
+  it("reads Windows file-lock owner start times through a bounded probe", () => {
+    mockReadWindowsProcessStartTime.mockReturnValue(1_752_000_000_123);
+
     return withMockedPlatform("win32", async () => {
+      // The Linux-only runtime-state reader stays Linux-only; the file-lock
+      // identity owner is what has to answer on Windows.
+      expect(getProcessStartTime(process.pid)).toBeNull();
+      expect(getFileLockProcessStartTime(42)).toBe(1_752_000_000_123);
+      // Cron claims this synchronously per tick, so the probe must be bounded
+      // rather than falling back to the reader's 5s-per-attempt default.
+      expect(mockReadWindowsProcessStartTime).toHaveBeenCalledWith(42, 1000);
+    });
+  });
+
+  it("fails conservatively when the Windows file-lock start-time probe finds nothing", () => {
+    mockReadWindowsProcessStartTime.mockReturnValue(null);
+
+    return withMockedPlatform("win32", async () => {
+      expect(getFileLockProcessStartTime(42)).toBeNull();
+    });
+  });
+
+  it("returns null on platforms with no start-identity source", () => {
+    return withMockedPlatform("freebsd", async () => {
       expect(getProcessStartTime(process.pid)).toBeNull();
       expect(getFileLockProcessStartTime(process.pid)).toBeNull();
     });

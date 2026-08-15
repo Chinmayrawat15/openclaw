@@ -10,6 +10,10 @@ import {
 } from "../cron/store/run-receipt-store.js";
 import type { CronJob } from "../cron/types.js";
 import {
+  inspectNodeWorkerProcessIdentity,
+  requireNodeWorkerProcessIdentity,
+} from "../node-host/node-worker-process-identity.js";
+import {
   openOpenClawStateDatabase,
   runOpenClawStateWriteTransaction,
 } from "../state/openclaw-state-db.js";
@@ -51,6 +55,20 @@ describe("file-lock process identity on the running platform", () => {
   it("reports no identity for an unallocatable PID so reuse still fails closed", () => {
     expect(getFileLockProcessStartTime(UNALLOCATABLE_PID)).toBeNull();
     expect(getFileLockProcessStartTime(0)).toBeNull();
+  });
+
+  it("still resolves node-worker identity now that it shares the bounded probe", () => {
+    // The consolidation moved this consumer off the reader's 5s default onto the
+    // shared 1s bound. Prove on the real host that a live worker identity still
+    // resolves inside that bound instead of failing closed sooner.
+    const identity = requireNodeWorkerProcessIdentity(process.pid);
+
+    expect(identity).toEqual({
+      pid: process.pid,
+      startTime: getFileLockProcessStartTime(process.pid),
+    });
+    expect(inspectNodeWorkerProcessIdentity(identity)).toBe("live");
+    expect(inspectNodeWorkerProcessIdentity({ pid: process.pid, startTime: 1 })).toBe("reused");
   });
 
   it("lets a cron run acquire its durable fence and persist the owning identity", async () => {

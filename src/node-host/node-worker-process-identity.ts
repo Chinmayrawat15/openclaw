@@ -1,10 +1,9 @@
 import { getFileLockProcessStartTime, isPidDefinitelyDead } from "../shared/pid-alive.js";
 
-// Worker identity is resolved once at startup and on supervision checks, not on
-// a timer, so it keeps the Windows reader's original 5s-per-attempt tolerance
-// rather than the shorter lock-owner default. Shortening it would let a slow
-// PowerShell/WMIC probe fail worker startup closed where it previously
-// succeeded.
+// Worker startup and supervision checks are not on a timer, so this keeps the
+// Windows reader's full 5s-per-attempt tolerance. Stated explicitly rather than
+// inherited so that tightening the shared default cannot silently shorten it and
+// fail worker startup closed on a slow host.
 const WORKER_IDENTITY_PROBE_TIMEOUT_MS = 5000;
 
 export type NodeWorkerProcessIdentity = {

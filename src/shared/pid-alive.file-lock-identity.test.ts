@@ -57,10 +57,10 @@ describe("file-lock process identity on the running platform", () => {
     expect(getFileLockProcessStartTime(0)).toBeNull();
   });
 
-  it("still resolves node-worker identity now that it shares the bounded probe", () => {
-    // The consolidation moved this consumer off the reader's 5s default onto the
-    // shared 1s bound. Prove on the real host that a live worker identity still
-    // resolves inside that bound instead of failing closed sooner.
+  it("resolves node-worker identity under its own probe budget", () => {
+    // This consumer keeps the reader's full 5s-per-attempt budget after the
+    // consolidation. Prove on the real host that a live worker identity still
+    // resolves rather than failing closed.
     const identity = requireNodeWorkerProcessIdentity(process.pid);
 
     expect(identity).toEqual({

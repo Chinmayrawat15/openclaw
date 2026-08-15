@@ -4,11 +4,19 @@ import fsSync from "node:fs";
 import { readWindowsProcessStartTimeSync } from "../infra/windows-port-pids.js";
 
 const DARWIN_PS_TIMEOUT_MS = 1000;
-// Lock owners probe this synchronously while claiming a fence, so both the
-// PowerShell attempt and its WMIC fallback must stay short enough that an
-// unhealthy host cannot stall a cron tick. The reader's own 5s default would
-// allow ~10s per claim; 1s matches the gateway lock owner probe.
-const WINDOWS_LOCK_PROBE_TIMEOUT_MS = 1000;
+// Matches the Windows reader's own default. A shorter budget is tempting since
+// this is synchronous, but the first Get-CimInstance in a process pays
+// PowerShell module load and measurably exceeds one second on a cold Windows
+// runner, and Server 2025 has dropped the WMIC fallback that used to cover it.
+// Timing out here yields no identity, which fails the caller closed — for cron
+// that is the very "cannot acquire a durable fence" failure this helper exists
+// to prevent. Callers that must bound the wait harder pass their own value.
+const WINDOWS_PROBE_TIMEOUT_MS = 5000;
+// Our own start time cannot change while the process lives, and cron re-reads
+// it on every tick. Resolve it once so the hot path never repeats a spawn, and
+// only memoize success so a cold-start timeout is not sticky. Foreign PIDs are
+// never cached: detecting reuse depends on observing them live.
+let selfStartTime: number | null = null;
 
 function isValidPid(pid: number): boolean {
   return Number.isInteger(pid) && pid > 0;
@@ -119,17 +127,28 @@ export function getProcessStartTime(pid: number): number | null {
  * produced on the same host, so the units never need to agree across platforms.
  *
  * `windowsProbeTimeoutMs` bounds each Windows attempt (PowerShell, then the
- * WMIC fallback). It defaults to the lock-owner budget, which suits callers on
- * a timer path; callers that can afford to wait longer before failing closed
- * pass their own, and it is ignored on platforms that read identity in-process.
+ * WMIC fallback where it still exists). Callers that need a harder bound than
+ * the default pass their own; it is ignored on platforms that read identity
+ * in-process. Reading our own PID is memoized for the life of the process.
  */
 export function getFileLockProcessStartTime(
   pid: number,
-  windowsProbeTimeoutMs = WINDOWS_LOCK_PROBE_TIMEOUT_MS,
+  windowsProbeTimeoutMs = WINDOWS_PROBE_TIMEOUT_MS,
 ): number | null {
   if (!isValidPid(pid)) {
     return null;
   }
+  if (pid === process.pid && selfStartTime !== null) {
+    return selfStartTime;
+  }
+  const startTime = readProcessStartIdentity(pid, windowsProbeTimeoutMs);
+  if (pid === process.pid && startTime !== null) {
+    selfStartTime = startTime;
+  }
+  return startTime;
+}
+
+function readProcessStartIdentity(pid: number, windowsProbeTimeoutMs: number): number | null {
   if (process.platform === "darwin") {
     return getDarwinProcessStartTime(pid);
   }

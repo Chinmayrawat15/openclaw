@@ -165,7 +165,10 @@ function readProcessStartTime(pid: number, platform: NodeJS.Platform): number | 
   if (platform !== process.platform) {
     return null;
   }
-  return getFileLockProcessStartTime(pid);
+  // Keeps this owner probe on the same short budget as the cmdline probe beside
+  // it: a timeout here degrades to the cmdline liveness check rather than
+  // failing an operation closed, so waiting longer buys nothing.
+  return getFileLockProcessStartTime(pid, CMDLINE_EXEC_TIMEOUT_MS);
 }
 
 function defaultReadProcessCmdline(pid: number, platform: NodeJS.Platform): string[] | null {

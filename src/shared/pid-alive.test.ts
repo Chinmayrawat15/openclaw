@@ -241,20 +241,43 @@ describe("process start times", () => {
       // identity owner is what has to answer on Windows.
       expect(getProcessStartTime(process.pid)).toBeNull();
       expect(getFileLockProcessStartTime(42)).toBe(1_752_000_000_123);
-      // Cron claims this synchronously per tick, so the probe must be bounded
-      // rather than falling back to the reader's 5s-per-attempt default.
+      // The first Get-CimInstance in a process can exceed a second on a cold
+      // host, and timing out fails the caller closed, so the default keeps the
+      // reader's full per-attempt tolerance.
+      expect(mockReadWindowsProcessStartTime).toHaveBeenCalledWith(42, 5000);
+    });
+  });
+
+  it("lets a caller bound the Windows probe harder than the default", () => {
+    mockReadWindowsProcessStartTime.mockReturnValue(1_752_000_000_123);
+
+    return withMockedPlatform("win32", async () => {
+      // The gateway lock owner probe degrades to a cmdline check on timeout, so
+      // it deliberately waits less than a caller that would fail closed.
+      expect(getFileLockProcessStartTime(42, 1000)).toBe(1_752_000_000_123);
       expect(mockReadWindowsProcessStartTime).toHaveBeenCalledWith(42, 1000);
     });
   });
 
-  it("lets a caller widen the Windows probe budget past the lock-owner default", () => {
+  it("probes our own start identity once and reuses it", () => {
     mockReadWindowsProcessStartTime.mockReturnValue(1_752_000_000_123);
 
     return withMockedPlatform("win32", async () => {
-      // Callers off the timer path (node-worker startup) keep the reader's
-      // original tolerance so a slow probe cannot fail them closed.
-      expect(getFileLockProcessStartTime(42, 5000)).toBe(1_752_000_000_123);
-      expect(mockReadWindowsProcessStartTime).toHaveBeenCalledWith(42, 5000);
+      expect(getFileLockProcessStartTime(process.pid)).toBe(1_752_000_000_123);
+      expect(getFileLockProcessStartTime(process.pid)).toBe(1_752_000_000_123);
+      // Cron re-reads this every tick; our own start time cannot change while
+      // we are alive, so the spawn must not repeat.
+      expect(mockReadWindowsProcessStartTime).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("does not memoize a foreign PID, so reuse is still observed live", () => {
+    mockReadWindowsProcessStartTime.mockReturnValue(111);
+
+    return withMockedPlatform("win32", async () => {
+      expect(getFileLockProcessStartTime(42)).toBe(111);
+      mockReadWindowsProcessStartTime.mockReturnValue(222);
+      expect(getFileLockProcessStartTime(42)).toBe(222);
     });
   });
 
@@ -268,8 +291,10 @@ describe("process start times", () => {
 
   it("returns null on platforms with no start-identity source", () => {
     return withMockedPlatform("freebsd", async () => {
-      expect(getProcessStartTime(process.pid)).toBeNull();
-      expect(getFileLockProcessStartTime(process.pid)).toBeNull();
+      // Deliberately a foreign PID: reading our own is memoized for the life of
+      // the process, so it would answer from an earlier platform's cache here.
+      expect(getProcessStartTime(42)).toBeNull();
+      expect(getFileLockProcessStartTime(42)).toBeNull();
     });
   });
 

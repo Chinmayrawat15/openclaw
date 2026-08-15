@@ -12,11 +12,14 @@ const DARWIN_PS_TIMEOUT_MS = 1000;
 // that is the very "cannot acquire a durable fence" failure this helper exists
 // to prevent. Callers that must bound the wait harder pass their own value.
 const WINDOWS_PROBE_TIMEOUT_MS = 5000;
-// Our own start time cannot change while the process lives, and cron re-reads
-// it on every tick. Resolve it once so the hot path never repeats a spawn, and
-// only memoize success so a cold-start timeout is not sticky. Foreign PIDs are
-// never cached: detecting reuse depends on observing them live.
-let selfStartTime: number | null = null;
+// Windows-only. Cron re-reads our own identity every tick and it cannot change
+// while the process lives, but only the Windows probe is expensive enough to be
+// worth caching: PowerShell costs hundreds of milliseconds against a procfs read
+// or a `ps` call. Elsewhere a cache would trade an observably-unreadable
+// identity — which gateway lock ownership depends on seeing — for nothing.
+// Success only, so a cold-start timeout is not sticky; foreign PIDs are never
+// cached because detecting reuse depends on observing them live.
+let selfWindowsStartTime: number | null = null;
 
 function isValidPid(pid: number): boolean {
   return Number.isInteger(pid) && pid > 0;
@@ -128,8 +131,9 @@ export function getProcessStartTime(pid: number): number | null {
  *
  * `windowsProbeTimeoutMs` bounds each Windows attempt (PowerShell, then the
  * WMIC fallback where it still exists). Callers that need a harder bound than
- * the default pass their own; it is ignored on platforms that read identity
- * in-process. Reading our own PID is memoized for the life of the process.
+ * the default pass their own; it is ignored on the other platforms, which also
+ * read identity fresh on every call. Only the Windows read of our own PID is
+ * memoized, because only that probe is costly enough to be worth caching.
  */
 export function getFileLockProcessStartTime(
   pid: number,
@@ -138,22 +142,19 @@ export function getFileLockProcessStartTime(
   if (!isValidPid(pid)) {
     return null;
   }
-  if (pid === process.pid && selfStartTime !== null) {
-    return selfStartTime;
-  }
-  const startTime = readProcessStartIdentity(pid, windowsProbeTimeoutMs);
-  if (pid === process.pid && startTime !== null) {
-    selfStartTime = startTime;
-  }
-  return startTime;
-}
-
-function readProcessStartIdentity(pid: number, windowsProbeTimeoutMs: number): number | null {
   if (process.platform === "darwin") {
     return getDarwinProcessStartTime(pid);
   }
-  if (process.platform === "win32") {
-    return readWindowsProcessStartTimeSync(pid, windowsProbeTimeoutMs);
+  if (process.platform !== "win32") {
+    return getProcessStartTime(pid);
   }
-  return getProcessStartTime(pid);
+  const isSelf = pid === process.pid;
+  if (isSelf && selfWindowsStartTime !== null) {
+    return selfWindowsStartTime;
+  }
+  const startTime = readWindowsProcessStartTimeSync(pid, windowsProbeTimeoutMs);
+  if (isSelf && startTime !== null) {
+    selfWindowsStartTime = startTime;
+  }
+  return startTime;
 }

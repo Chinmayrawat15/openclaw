@@ -271,6 +271,27 @@ describe("process start times", () => {
     });
   });
 
+  it("re-reads our own identity on platforms that do not spawn for it", async () => {
+    // Only the Windows spawn is memoized. Gateway lock ownership relies on a
+    // failed procfs read reporting no identity, so Linux must stay live.
+    mockProcReads({
+      [`/proc/${process.pid}/stat`]: `${process.pid} (node) S 1 ${process.pid} ${process.pid} 0 -1 4194304 0 0 0 0 0 0 0 0 20 0 1 0 4242 0 0 0 0 0 0 0 0 0 0 0 0 0 17 0 0 0 0 0 0`,
+    });
+
+    await withMockedPlatform("linux", async () => {
+      expect(getFileLockProcessStartTime(process.pid)).toBe(4242);
+    });
+
+    vi.restoreAllMocks();
+    vi.spyOn(fsSync, "readFileSync").mockImplementation(() => {
+      throw new Error("no proc access");
+    });
+
+    await withMockedPlatform("linux", async () => {
+      expect(getFileLockProcessStartTime(process.pid)).toBeNull();
+    });
+  });
+
   it("does not memoize a foreign PID, so reuse is still observed live", () => {
     mockReadWindowsProcessStartTime.mockReturnValue(111);
 
@@ -291,10 +312,8 @@ describe("process start times", () => {
 
   it("returns null on platforms with no start-identity source", () => {
     return withMockedPlatform("freebsd", async () => {
-      // Deliberately a foreign PID: reading our own is memoized for the life of
-      // the process, so it would answer from an earlier platform's cache here.
-      expect(getProcessStartTime(42)).toBeNull();
-      expect(getFileLockProcessStartTime(42)).toBeNull();
+      expect(getProcessStartTime(process.pid)).toBeNull();
+      expect(getFileLockProcessStartTime(process.pid)).toBeNull();
     });
   });
 
